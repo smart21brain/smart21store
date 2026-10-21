@@ -36,5 +36,15 @@ const router = makeRouter();
 registerStore(router);
 
 export default {
-  fetch: (request, env, ctx) => router.handle(request, env, ctx),
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/')) return router.handle(request, env, ctx);
+    // Home page: open the store
+    if (url.pathname === '/' || url.pathname === '/index.html') {
+      return Response.redirect(url.origin + '/smart21store.html', 302);
+    }
+    // Any other path: serve the static files (page, icons, manifest, service worker)
+    if (env.ASSETS) return env.ASSETS.fetch(request);
+    return new Response('Not found', { status: 404 });
+  },
 };

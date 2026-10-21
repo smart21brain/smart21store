@@ -6,12 +6,13 @@ compatibility_date = "2025-10-01"
 # Only /api/* runs through the Worker code.
 [assets]
 directory = "./public"
+binding = "ASSETS"
 run_worker_first = ["/api/*"]
 
 [[d1_databases]]
 binding = "DB"
 database_name = "smart21store-db"
-database_id = "be86655d-695d-405a-b4d7-2ff81ddc18bb"
+database_id = "PASTE-ID-FROM-wrangler-d1-create"
 
 [[r2_buckets]]
 binding = "MATERIALS"
