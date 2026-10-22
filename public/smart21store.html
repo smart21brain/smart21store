@@ -200,7 +200,7 @@ function render(){tabs();var q=$('q').value.toLowerCase().trim(),h='',sc=functio
 function applyTheme(t){document.documentElement.setAttribute('data-theme',t);$('th').innerHTML=ic(t==='dark'?'sun':'moon',18)}
 var th='dark';try{th=localStorage.getItem('s21theme')||'dark'}catch(e){}
 applyTheme(th);$('th').onclick=function(){th=th==='dark'?'light':'dark';applyTheme(th);try{localStorage.setItem('s21theme',th)}catch(e){}};
-setLang(S.lang);$('lg').onclick=function(){setLang(LANGS[(LANGS.indexOf(S.lang)+1)%4]);render()};
+var LANGS=['en','sw','fr','ar'];setLang(S.lang);$('lg').onclick=function(){setLang(LANGS[(LANGS.indexOf(S.lang)+1)%4]);render()};
 
 var COLS=[{id:1,n:'Term 1 starter pack',ids:[1,5,10],pct:15},{id:2,n:'Form 4 exam prep',ids:[1,2,5],pct:15},{id:3,n:'Science fair kit',ids:[3,9,11],pct:20}],NOTES=[],NU=0;
 var PATHS=[{n:'Learn electronics in 6 weeks',ic:'bolt',steps:[[3,'Weeks 1-2: study the circuit library'],[9,'Weeks 3-4: build with the starter kit'],[11,'Weeks 5-6: add sensors']]},{n:'Primary maths mastery',ic:'book',steps:[[1,'Core lessons'],[5,'Track progress with templates'],[4,'Practice with game assets']]}];
