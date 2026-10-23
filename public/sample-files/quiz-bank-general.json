@@ -1,0 +1,35 @@
+[
+  {
+    "q": "What is 7 x 8?",
+    "options": [
+      "54",
+      "56",
+      "64",
+      "48"
+    ],
+    "answer": 1,
+    "subject": "Math"
+  },
+  {
+    "q": "Which planet is closest to the Sun?",
+    "options": [
+      "Venus",
+      "Earth",
+      "Mercury",
+      "Mars"
+    ],
+    "answer": 2,
+    "subject": "Science"
+  },
+  {
+    "q": "Capital city of Tanzania (official)?",
+    "options": [
+      "Dodoma",
+      "Arusha",
+      "Mwanza",
+      "Tanga"
+    ],
+    "answer": 0,
+    "subject": "Geography"
+  }
+]
