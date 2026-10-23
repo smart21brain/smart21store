@@ -366,4 +366,12 @@ if(m){e.style.color='#8be3b8';e.innerHTML='Signed in as <b>'+m.name+'</b>. This 
 e.textContent='Password accepted, but the browser did not keep the sign-in. Allow cookies for this site and try again.';b.disabled=false})
 .catch(function(x){e.textContent=x&&x.m==='not found'||x&&x.s===404?'The server has no sign-in yet. Deploy the new src/store-api.js.':(x&&x.m)||'Could not sign in. Try again.';b.disabled=false})};
 </script>
+<script id="adbs">
+(function(){var _r=render;render=function(){_r();var m=$('me');if(!m||!ME||ME.role!=='admin')return;
+var b=$('adb');if(!b){b=document.createElement('button');b.id='adb';b.className=m.className;b.textContent='Admin';b.onclick=function(){setTab('adm');scrollTo(0,0)};m.parentNode.insertBefore(b,m)}
+b.style.cssText=tab==='adm'?'outline:2px solid #ffc857':'';
+var t=document.querySelector('#tabs .tab.on');if(t&&t.scrollIntoView)t.scrollIntoView({inline:'center',block:'nearest'})};
+var go=function(){if(location.hash==='#admin'&&ME&&ME.role==='admin'){location.hash='';setTab('adm')}};
+var _l=window.loadMe;setInterval(go,700);render()})();
+</script>
 </body></html>
