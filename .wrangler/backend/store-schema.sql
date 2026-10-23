@@ -1,0 +1,23 @@
+-- Smart21Store schema (D1). Run: wrangler d1 execute smart21brain-db --file=store-schema.sql
+CREATE TABLE IF NOT EXISTS store_items(id INTEGER PRIMARY KEY AUTOINCREMENT,kind TEXT NOT NULL,name TEXT NOT NULL,description TEXT,subject TEXT,grade TEXT,file_type TEXT,size_bytes INTEGER DEFAULT 0,price_tzs INTEGER DEFAULT 0,rating_avg REAL DEFAULT 0,rating_count INTEGER DEFAULT 0,downloads INTEGER DEFAULT 0,status TEXT DEFAULT 'pending',featured INTEGER DEFAULT 0,target_app TEXT,seller_id INTEGER,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS store_versions(id INTEGER PRIMARY KEY AUTOINCREMENT,item_id INTEGER,version INTEGER,r2_key TEXT,sha256 TEXT,size_bytes INTEGER,notes TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS store_library(user_id INTEGER,item_id INTEGER,version INTEGER,acquired_at TEXT DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,item_id));
+CREATE TABLE IF NOT EXISTS store_wishlist(user_id INTEGER,item_id INTEGER,PRIMARY KEY(user_id,item_id));
+CREATE TABLE IF NOT EXISTS store_orders(id INTEGER PRIMARY KEY AUTOINCREMENT,receipt_no TEXT UNIQUE,user_id INTEGER,total_tzs INTEGER,discount_tzs INTEGER DEFAULT 0,coupon TEXT,method TEXT,phone TEXT,status TEXT DEFAULT 'pending',provider_ref TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS store_order_items(order_id INTEGER,item_id INTEGER,price_tzs INTEGER,seats INTEGER DEFAULT 1);
+CREATE TABLE IF NOT EXISTS store_reviews(id INTEGER PRIMARY KEY AUTOINCREMENT,item_id INTEGER,user_id INTEGER,stars INTEGER,body TEXT,verified INTEGER DEFAULT 0,reports INTEGER DEFAULT 0,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS store_coupons(code TEXT PRIMARY KEY,percent INTEGER,max_uses INTEGER,used INTEGER DEFAULT 0,expires_at TEXT);
+CREATE TABLE IF NOT EXISTS store_bundles(id INTEGER PRIMARY KEY AUTOINCREMENT,owner_id INTEGER,institution_id INTEGER,item_id INTEGER,seats INTEGER);
+CREATE TABLE IF NOT EXISTS store_bundle_seats(bundle_id INTEGER,user_id INTEGER,PRIMARY KEY(bundle_id,user_id));
+CREATE TABLE IF NOT EXISTS store_devices(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,name TEXT,token_hash TEXT,last_sync TEXT);
+CREATE TABLE IF NOT EXISTS store_device_files(device_id INTEGER,item_id INTEGER,version INTEGER,PRIMARY KEY(device_id,item_id));
+CREATE TABLE IF NOT EXISTS store_sellers(user_id INTEGER PRIMARY KEY,share_percent INTEGER DEFAULT 70,approved INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS store_referrals(code TEXT PRIMARY KEY,owner_id INTEGER,uses INTEGER DEFAULT 0);
+INSERT OR IGNORE INTO store_coupons(code,percent,max_uses) VALUES('SMART21',20,1000),('WELCOME10',10,5000);
+CREATE TABLE IF NOT EXISTS store_payouts(id INTEGER PRIMARY KEY AUTOINCREMENT,seller_id INTEGER,amount_tzs INTEGER,method TEXT,phone TEXT,status TEXT DEFAULT 'requested',created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS store_previews(item_id INTEGER,n INTEGER,r2_key TEXT,PRIMARY KEY(item_id,n));
+CREATE TABLE IF NOT EXISTS store_collections(id INTEGER PRIMARY KEY,name TEXT,percent INTEGER,item_ids TEXT);
+CREATE TABLE IF NOT EXISTS store_subscriptions(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,item_id INTEGER,expires_at TEXT,seats INTEGER DEFAULT 1);
+CREATE TABLE IF NOT EXISTS store_notifications(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,kind TEXT,title TEXT,body TEXT,link TEXT,read INTEGER DEFAULT 0,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+INSERT OR IGNORE INTO store_items(id,kind,name,description,price_tzs,status) VALUES(9001,'Plan','Smart21 Plus Monthly','All files, 30 days',15000,'published'),(9002,'Plan','Smart21 Plus Yearly','All files, 365 days',150000,'published');
+INSERT OR IGNORE INTO store_collections VALUES(1,'Term 1 starter pack',15,'[1,5,10]'),(2,'Form 4 exam prep',15,'[1,2,5]'),(3,'Science fair kit',20,'[3,9,11]');
