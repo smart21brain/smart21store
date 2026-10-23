@@ -302,4 +302,46 @@ function adminDraw(){var el=$('adm');if(!el)return;Promise.all([api('/admin/stat
 function pub(id,un){api('/admin/items/'+id+'/publish',{method:'POST',body:JSON.stringify({unpublish:!!un})}).then(adminDraw).catch(function(){toast('Failed')})}
 $('hl').src=document.querySelector('.brand img').src;(function(){var m=location.search.match(/item=(\d+)/)||location.hash.match(/item-(\d+)/);if(m)setTimeout(function(){if(it(+m[1]))det(+m[1])},400)})();api('/rates').then(function(r){RATES=r||{};curUI();render()}).catch(function(){curUI()});loadMe();$('q').addEventListener('input',function(){render();clearTimeout(window._sl);var v=$('q').value.trim();if(v.length>2)window._sl=setTimeout(function(){post('/search-log',{q:v}).catch(function(){})},1500)});render();
 try{if('serviceWorker' in navigator&&location.protocol.indexOf('http')==0)navigator.serviceWorker.register('store-sw.js').catch(function(){})}catch(e){}
-</script></body></html>
+</script><style id="pcs">
+.dz{border:2px dashed rgba(128,128,128,.55);border-radius:16px;padding:26px 14px;text-align:center;cursor:pointer;margin:8px 0}.dz.on{border-color:#ffc857;background:rgba(255,200,87,.08)}
+.pcs{display:flex;gap:8px;margin:6px 0}.pcs button.on{outline:2px solid #ffc857}
+#pc input,#pc select,#pc textarea{display:block;width:100%;margin:6px 0;box-sizing:border-box}
+#pc input[hidden]{display:none!important}#pb,#pvb{width:100%;height:10px;margin:8px 0}.stp{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.stp span{padding:4px 10px;border-radius:99px;background:rgba(128,128,128,.2);font-size:12px}.stp .ok{background:#0B6E4F;color:#fff}
+</style>
+<script>
+(function(){
+var TY='File',SUB=['Math','Science','Electronics','Games','General','Apps'],GR=['Primary','Secondary','College','All'],_a=adminDraw;
+function o(a){return a.map(function(x){return '<option>'+x+'</option>'}).join('')}
+function xup(u,fd,pg){return new Promise(function(ok,no){var x=new XMLHttpRequest();x.open('POST',u);x.withCredentials=true;if(pg)x.upload.onprogress=function(e){if(e.lengthComputable)pg(Math.round(e.loaded/e.total*100))};x.onload=function(){x.status<300?ok(JSON.parse(x.responseText||'{}')):no(x.status)};x.onerror=function(){no(0)};x.send(fd)})}
+function steps(n){var s=['Uploaded','Virus scan','Admin review','Live'];$('pst').innerHTML='<div class="stp">'+s.map(function(t,i){return '<span class="'+(i<n?'ok':'')+'">'+(i<n?'✓ ':'')+t+'</span>'}).join('')+'</div>'}
+function draw(){return '<div class="ord f" id="pc"><b>Publish console</b><div class="meta">Add a file or an application to the store.</div>'
++'<div class="pcs"><button class="btn on" id="pcF" onclick="pcType(\'File\')">File</button><button class="btn o" id="pcA" onclick="pcType(\'Application\')">Application</button></div>'
++'<div class="dz" id="dz"><div id="dzt">Drag &amp; drop your file here, or tap to choose</div><input id="pf" type="file" hidden></div>'
++'<input id="pn" placeholder="Title"><textarea id="pd" rows="3" placeholder="Description"></textarea>'
++'<select id="psb">'+o(SUB)+'</select><select id="pg">'+o(GR)+'</select><input id="pp" type="number" min="0" placeholder="Price in TSh (0 = free)">'
++'<select id="pl"><option value="single">Licence: single teacher</option><option value="classroom">Licence: classroom</option><option value="school">Licence: whole school</option></select>'
++'<input id="pt" placeholder="Target app (e.g. Smart21Brain)" style="display:none">'
++'<label class="meta">Icon and screenshots (up to 5, PNG/JPG/WebP, 2 MB each)</label><input id="pi" type="file" accept="image/*" multiple>'
++'<label class="meta">Sample: PDF (8 MB) or MP4 trailer (30 MB)</label><input id="psm" type="file" accept="application/pdf,video/mp4">'
++'<progress id="pb" max="100" value="0" hidden></progress><button class="btn" id="pgo" onclick="pcGo()">Upload and submit</button><div id="pst"></div></div>'
++'<div class="ord f" id="pvw"><b>Release a new version</b><select id="pv"></select><input id="pvn" placeholder="What is new in this version?"><input id="pvf" type="file"><progress id="pvb" max="100" value="0" hidden></progress><button class="btn" onclick="pcVer()">Release update</button><div class="meta">Everyone who owns the item is notified.</div></div>'}
+function items(){api('/admin/pending').then(function(l){var s=$('pv');if(s)s.innerHTML=l.map(function(x){return '<option value="'+x.id+'">'+x.name+' ('+x.status+')</option>'}).join('')}).catch(function(){})}
+window.pcType=function(t){TY=t;$('pcF').className='btn '+(t==='File'?'on':'o');$('pcA').className='btn '+(t==='Application'?'on':'o');$('pt').style.display=t==='Application'?'block':'none';if(t==='Application')$('psb').value='Apps';$('pf').accept=t==='Application'?'.apk,.aab,.exe,.msi,.dmg,.zip':''};
+function wire(){var z=$('dz'),f=$('pf');function pick(x){if(!x)return;$('dzt').textContent=x.name+' · '+(x.size/1048576).toFixed(1)+' MB';if(!$('pn').value)$('pn').value=x.name.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ')}
+z.onclick=function(){f.click()};f.onchange=function(){pick(f.files[0])};
+['dragenter','dragover'].forEach(function(e){z.addEventListener(e,function(ev){ev.preventDefault();z.classList.add('on')})});
+['dragleave','drop'].forEach(function(e){z.addEventListener(e,function(ev){ev.preventDefault();z.classList.remove('on')})});
+z.addEventListener('drop',function(ev){var x=ev.dataTransfer.files[0];if(x){var d=new DataTransfer();d.items.add(x);f.files=d.files;pick(x)}})}
+window.pcGo=function(){var f=$('pf').files[0],n=$('pn').value.trim();if(!f)return toast('Choose a file first');if(!n)return toast('Add a title');
+var fd=new FormData();fd.append('file',f);fd.append('name',n);fd.append('description',$('pd').value);fd.append('subject',$('psb').value);fd.append('grade',$('pg').value);fd.append('price',$('pp').value||0);fd.append('license',$('pl').value);if(TY==='Application')fd.append('target_app',$('pt').value||'Smart21Brain');
+var b=$('pb'),g=$('pgo');b.hidden=false;b.value=0;g.disabled=true;var id;
+xup('/api/store/admin/items',fd,function(p){b.value=p}).then(function(r){id=r.id;var im=$('pi').files;if(!im.length)return;var p=new FormData();for(var k=0;k<im.length&&k<5;k++)p.append('img',im[k]);return xup('/api/store/admin/items/'+id+'/previews',p)})
+.then(function(){var s=$('psm').files[0];if(!s)return;var q=new FormData();q.append('sample',s);return xup('/api/store/admin/items/'+id+'/sample',q)})
+.then(function(){steps(1);toast('Uploaded. Scanning, then review.');b.hidden=true;g.disabled=false;['pf','pn','pd','pp','pi','psm','pt'].forEach(function(i){$(i).value=''});$('dzt').textContent='Drag & drop your file here, or tap to choose';items();adminDraw()})
+.catch(function(){toast('Upload failed');b.hidden=true;g.disabled=false})};
+window.pcVer=function(){var f=$('pvf').files[0],id=$('pv').value;if(!f||!id)return toast('Choose an item and a file');var fd=new FormData();fd.append('file',f);fd.append('notes',$('pvn').value);var b=$('pvb');b.hidden=false;
+xup('/api/store/admin/items/'+id+'/version',fd,function(p){b.value=p}).then(function(r){b.hidden=true;$('pvf').value='';$('pvn').value='';toast('Version '+r.version+' released')}).catch(function(){b.hidden=true;toast('Failed')})};
+adminDraw=function(){var el=$('adm');if(el&&!$('pc')){el.insertAdjacentHTML('beforebegin',draw());wire()}items();_a()};
+})();
+</script>
+</body></html>
