@@ -360,8 +360,9 @@ $('lgc').onclick=function(){$('lgo').classList.remove('on')};
 $('lgf').onsubmit=function(ev){ev.preventDefault();var b=$('lgb'),e=$('lge');b.disabled=true;e.textContent='';
 fetch('/api/store/login',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({email:$('lgm').value,password:$('lgp').value})})
 .then(function(r){return r.text().then(function(t){var j={};try{j=JSON.parse(t)}catch(x){}if(!r.ok)throw{s:r.status,m:j.error};return j})})
-.then(function(){return fetch('/api/store/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})})
-.then(function(m){if(m&&m.role==='admin'){location.reload();return}
+.then(function(){return fetch('/api/store/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():r.text().then(function(t){var j={};try{j=JSON.parse(t)}catch(x){}return{bad:r.status+(j.error?' - '+j.error:'')}})}).catch(function(){return null})})
+.then(function(m){if(m&&m.bad){e.textContent='Password accepted, but the store could not read your account ('+m.bad+'). Send this message to your developer.';b.disabled=false;return}
+if(m&&m.role==='admin'){location.reload();return}
 if(m){e.style.color='#8be3b8';e.innerHTML='Signed in as <b>'+m.name+'</b>. This account has the role "'+(m.base||m.role)+'", not admin, so the Admin tab stays hidden.<br><br><button type="button" class="b" onclick="location.reload()">Continue</button>';b.disabled=false;return}
 e.textContent='Password accepted, but the browser did not keep the sign-in. Allow cookies for this site and try again.';b.disabled=false})
 .catch(function(x){e.textContent=x&&x.m==='not found'||x&&x.s===404?'The server has no sign-in yet. Deploy the new src/store-api.js.':(x&&x.m)||'Could not sign in. Try again.';b.disabled=false})};

@@ -8,7 +8,9 @@ async function hmac(secret,msg){const k=await crypto.subtle.importKey('raw',new 
 // Auth: same users+sessions tables as school/shop/institution (cookie s21_session).
 // store role: 'admin' (users.role=admin), 'seller' (teacher approved in store_sellers), else 'user'.
 async function getUser(request, env){
- const u=await getSessionUser(request,env.DB);if(!u)return null;
+ const m=(request.headers.get('Cookie')||'').match(/(?:^|;\s*)s21_session=([^;]+)/);if(!m)return null;
+ const ss=await env.DB.prepare("SELECT user_id FROM sessions WHERE token=? AND datetime(expires_at)>datetime('now')").bind(m[1]).first();if(!ss)return null;
+ const u=await env.DB.prepare('SELECT id,name,email,role FROM users WHERE id=?').bind(ss.user_id).first();if(!u)return null;
  let role=u.role==='admin'?'admin':'user';
  if(role==='user'&&u.role==='teacher'){const s=await env.DB.prepare('SELECT approved FROM store_sellers WHERE user_id=?').bind(u.id).first();if(s&&s.approved)role='seller'}
  return{id:u.id,name:u.name,role,base:u.role}}
@@ -146,7 +148,7 @@ export function registerStore(r){
  r.get('/api/v1/items/:id',async c=>{const[k,e]=await keyAuth(c);if(e)return e;const i=await c.env.DB.prepare(PUB+' AND id=?').bind(c.params.id).first();return i?Jc(i):Jc({error:'not found'},404)});
  r.get('/api/v1/collections',async c=>{const[k,e]=await keyAuth(c);if(e)return e;return Jc((await c.env.DB.prepare('SELECT id,name,percent,item_ids FROM store_collections').all()).results.map(x=>({id:x.id,name:x.name,percent:x.percent,item_ids:JSON.parse(x.item_ids)})))});
  r.get('/api/v1/docs',async()=>new Response('<!doctype html><meta charset="utf-8"><title>Smart21Store API</title><body style="font-family:sans-serif;max-width:640px;margin:24px auto"><h1>Smart21Store API v1</h1><p>Read-only catalog. Send <code>Authorization: Bearer YOUR_KEY</code>. Limit: 60 requests per minute per key. Create keys in the store under API.</p><ul><li><code>GET /api/v1/items?subject=Math</code></li><li><code>GET /api/v1/items/:id</code></li><li><code>GET /api/v1/collections</code></li></ul><p>Errors: 401 missing/invalid key, 404 not found, 429 rate limit.</p>',{headers:{'content-type':'text/html; charset=utf-8'}}));
- r.get('/api/store/me',async c=>{const u=await getUser(c.request,c.env);return u?J({...u,plus:await plus(c.env,u.id)}):J({error:'login required'},401)});
+ r.get('/api/store/me',async c=>{try{const u=await getUser(c.request,c.env);if(!u)return J({error:'login required'},401);let pl=false;try{pl=await plus(c.env,u.id)}catch(e){}return J({...u,plus:pl})}catch(e){return J({error:'me failed: '+String(e&&e.message||e).slice(0,140)},500)}});
  r.post('/api/store/claim/:id',async c=>{const[u,e]=await need(c);if(e)return e;const i=await c.env.DB.prepare("SELECT price_tzs FROM store_items WHERE id=? AND status='published'").bind(c.params.id).first();if(!i||i.price_tzs>0)return J({error:'not free'},400);await c.env.DB.prepare('INSERT OR IGNORE INTO store_library(user_id,item_id,version) VALUES(?,?,COALESCE((SELECT MAX(version) FROM store_versions WHERE item_id=?),1))').bind(u.id,c.params.id,c.params.id).run();return J({ok:1})});
  r.post('/api/store/seller/apply',async c=>{const[u,e]=await need(c);if(e)return e;await c.env.DB.prepare('INSERT OR IGNORE INTO store_sellers(user_id,approved) VALUES(?,0)').bind(u.id).run();return J({ok:1,status:'pending approval'})});
  r.post('/api/store/admin/sellers/:id/approve',async c=>{const[u,e]=await need(c,'admin');if(e)return e;await c.env.DB.prepare('UPDATE store_sellers SET approved=1 WHERE user_id=?').bind(c.params.id).run();return J({ok:1})});
