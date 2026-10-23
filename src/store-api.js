@@ -13,7 +13,7 @@ async function getUser(request, env){
  const u=await env.DB.prepare('SELECT id,name,email,role FROM users WHERE id=?').bind(ss.user_id).first();if(!u)return null;
  let role=u.role==='admin'?'admin':'user';
  if(role==='user'&&u.role==='teacher'){const s=await env.DB.prepare('SELECT approved FROM store_sellers WHERE user_id=?').bind(u.id).first();if(s&&s.approved)role='seller'}
- return{id:u.id,name:u.name,role,base:u.role}}
+ return{id:u.id,name:u.name,email:u.email,role,base:u.role}}
 const need=async(c,role)=>{const o=c.request.headers.get('origin');if(c.request.method!=='GET'&&o&&new URL(o).host!==new URL(c.request.url).host)return[null,J({error:'bad origin'},403)];const u=await getUser(c.request,c.env);if(!u)return[null,J({error:'login required'},401)];if(role&&u.role!==role&&u.role!=='admin')return[null,J({error:'forbidden'},403)];if(role==='admin'&&c.request.method!=='GET')await audit(c.env,u,c.request.method,new URL(c.request.url).pathname);return[u,null]};
 
 async function r_earn(c,u){const sh=(await c.env.DB.prepare('SELECT share_percent FROM store_sellers WHERE user_id=?').bind(u.id).first())?.share_percent??70;const g=(await c.env.DB.prepare("SELECT COALESCE(SUM(oi.price_tzs),0) t FROM store_order_items oi JOIN store_orders o ON o.id=oi.order_id AND o.status='paid' JOIN store_items i ON i.id=oi.item_id WHERE i.seller_id=?").bind(u.id).first()).t,p=(await c.env.DB.prepare("SELECT COALESCE(SUM(amount_tzs),0) t FROM store_payouts WHERE seller_id=? AND status IN ('requested','paid')").bind(u.id).first()).t;return J({available:Math.max(0,Math.floor(g*sh/100)-p)})}
