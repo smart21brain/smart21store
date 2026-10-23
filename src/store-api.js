@@ -1,6 +1,6 @@
 // Smart21Store API. In src/index.js:  import {registerStore} from './store-api.js';  registerStore(router);
 // Needs: env.DB (D1), env.MATERIALS (R2), secrets STORE_SECRET, PAY_API_URL, PAY_API_KEY, PAY_WEBHOOK_SECRET, optional SCAN_URL.
-import { getSessionUser } from './lib/auth.js';
+import { getSessionUser, verifyPassword, createSession, sessionCookie, clearSessionCookie } from './lib/auth.js';
 const J=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{'content-type':'application/json'}});
 const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 async function hmac(secret,msg){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return hex(await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(msg)))}
@@ -33,6 +33,17 @@ const Jc=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{'content-t
 async function keyAuth(c){const m=(c.request.headers.get('authorization')||'').match(/^Bearer (s21_[a-f0-9]+)$/);if(!m)return[null,J({error:'missing API key'},401)];const k=await c.env.DB.prepare('SELECT id FROM store_api_keys WHERE key_hash=? AND revoked=0').bind(await sha(m[1])).first();if(!k)return[null,J({error:'invalid key'},401)];const n=(await c.env.DB.prepare('INSERT INTO store_rate(key_id,minute,n) VALUES(?,?,1) ON CONFLICT(key_id,minute) DO UPDATE SET n=n+1 RETURNING n').bind(k.id,Math.floor(Date.now()/60000)).first()).n;if(n>60)return[null,J({error:'rate limit: 60 requests per minute'},429)];await c.env.DB.prepare('UPDATE store_api_keys SET calls=calls+1 WHERE id=?').bind(k.id).run();return[k,null]}
 const PUB="SELECT id,kind,name,description,subject,grade,file_type,price_tzs,rating_avg,rating_count,license,(SELECT MAX(version) FROM store_versions WHERE item_id=store_items.id) AS latest_version FROM store_items WHERE status='published' AND kind!='Plan'";
 export function registerStore(r){
+ // Sign in / out on the store's own address (the cookie of another workers.dev address is never sent here).
+ const sameOrigin=req=>{const o=req.headers.get('origin');return !o||new URL(o).host===new URL(req.url).host};
+ r.post('/api/store/login',async({request,env})=>{if(!sameOrigin(request))return J({error:'bad origin'},403);let b;try{b=await request.json()}catch(e){return J({error:'bad request'},400)}
+  const email=String(b.email||'').trim().toLowerCase(),pw=String(b.password||'');if(!email||!pw)return J({error:'Enter your email and password'},400);
+  const row=await env.DB.prepare('SELECT * FROM users WHERE lower(email)=?').bind(email).first();
+  const h=row&&(row.password_hash||row.pass_hash||row.hash),sl=row&&(row.password_salt||row.pass_salt||row.salt);
+  if(row&&!(h&&sl))return J({error:'users table has no password_hash / password_salt columns'},500);
+  if(!row||!(await verifyPassword(pw,h,sl)))return J({error:'Wrong email or password'},401);
+  const ss=await createSession(env.DB,row.id);
+  return new Response(JSON.stringify({ok:1,name:row.name,role:row.role}),{status:200,headers:{'content-type':'application/json','set-cookie':sessionCookie(ss.token,ss.expires)}})});
+ r.post('/api/store/logout',async({request,env})=>{if(!sameOrigin(request))return J({error:'bad origin'},403);const m=(request.headers.get('Cookie')||'').match(/(?:^|;\s*)s21_session=([^;]+)/);if(m)await env.DB.prepare('DELETE FROM sessions WHERE token=?').bind(m[1]).run();return new Response(JSON.stringify({ok:1}),{status:200,headers:{'content-type':'application/json','set-cookie':clearSessionCookie()}})});
  r.get('/api/store/items',async({env,url})=>{const k=url.searchParams.get('kind');const q=k?env.DB.prepare("SELECT *,(SELECT MAX(version) FROM store_versions WHERE item_id=store_items.id) AS latest,(SELECT COUNT(*) FROM store_previews WHERE item_id=store_items.id) AS pv,(SELECT verified FROM store_sellers WHERE user_id=store_items.seller_id) AS sv,(store_items.seller_id IS NULL) AS off,(SELECT type FROM store_samples WHERE item_id=store_items.id) AS smp FROM store_items WHERE status='published' AND kind=? ORDER BY downloads DESC").bind(k):env.DB.prepare("SELECT *,(SELECT MAX(version) FROM store_versions WHERE item_id=store_items.id) AS latest,(SELECT COUNT(*) FROM store_previews WHERE item_id=store_items.id) AS pv FROM store_items WHERE status='published' AND kind!='Plan' ORDER BY downloads DESC");return J((await q.all()).results)});
  r.get('/api/store/items/:id',async({env,params})=>{const i=await env.DB.prepare("SELECT * FROM store_items WHERE id=? AND status='published'").bind(params.id).first();if(!i)return J({error:'not found'},404);const v=await env.DB.prepare('SELECT version,notes,created_at FROM store_versions WHERE item_id=? ORDER BY version DESC').bind(params.id).all();const rv=await env.DB.prepare('SELECT id,stars,body,verified,created_at,(SELECT name FROM users WHERE id=store_reviews.user_id) AS u FROM store_reviews WHERE item_id=? AND reports<5 ORDER BY id DESC LIMIT 50').bind(params.id).all();return J({...i,versions:v.results,reviews:rv.results})});
  // Library, updates, wishlist

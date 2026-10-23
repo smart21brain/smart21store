@@ -284,7 +284,7 @@ function upl(){var f=$('uf').files[0];if(!f||!$('un').value)return toast('Add a 
  fetch('/api/store/admin/items',{method:'POST',body:fd,credentials:'include'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(r){window._uid=r.id;var im=$('ui').files;if(!im.length)return r;var p=new FormData();for(var k=0;k<im.length&&k<5;k++)p.append('img',im[k]);return fetch('/api/store/admin/items/'+r.id+'/previews',{method:'POST',body:p,credentials:'include'})}).then(function(){var sf=$('us').files[0];if(!sf)return;var q=new FormData();q.append('sample',sf);return fetch('/api/store/admin/items/'+window._uid+'/sample',{method:'POST',body:q,credentials:'include'})}).then(function(){toast('Uploaded. Scanning, then review.')}).catch(function(){toast('Upload failed')})}
 function loadMe(){api('/me').then(function(m){ME=m;$('me').innerHTML=ic('user',16)+' '+m.name;$('me').onclick=function(){setTab('earn')};
  api('/items').then(function(rs){if(rs.length)ITEMS=rs.map(function(r){return{id:r.id,t:r.kind,n:r.name,k:(r.file_type||'')+' · '+Math.round((r.size_bytes||0)/1048576)+' MB',ic:r.kind==='Files'?'doc':'box',pv:r.pv||0,r:+(r.rating_avg||0).toFixed(1),p:r.price_tzs||0,v:r.latest||1,sub:r.subject||'General',g:r.grade||'All',ty:r.file_type||'Hardware',pop:r.downloads||0,nw:r.id,mb:Math.round((r.size_bytes||0)/1048576),go:r.target_app||'',d:r.description||'',lic:r.license||'single',sv:r.sv,off:r.off,stock:r.stock,ships_on:r.ships_on,smp:r.smp}})}).catch(function(){}).then(syncLib).catch(function(){render()});
- api('/orders').then(mapOrders).catch(function(){});api('/progress').then(function(p){S.prog={};p.forEach(function(x){S.prog[x.item_id]=x.pct});save();render()}).catch(function(){});api('/notifications').then(function(n){NOTES=n;NU=n.filter(function(x){return !x.read}).length;render()}).catch(function(){});api('/collections').then(function(c){if(c.length)COLS=c.map(function(x){return{id:x.id,n:x.name,ids:x.ids,pct:x.percent}});render()}).catch(function(){});api('/recommend').then(function(r){RECS=r;render()}).catch(function(){})}).catch(function(){$('me').onclick=function(){location.href='/login.html?next='+encodeURIComponent(location.pathname)}})}
+ api('/orders').then(mapOrders).catch(function(){});api('/progress').then(function(p){S.prog={};p.forEach(function(x){S.prog[x.item_id]=x.pct});save();render()}).catch(function(){});api('/notifications').then(function(n){NOTES=n;NU=n.filter(function(x){return !x.read}).length;render()}).catch(function(){});api('/collections').then(function(c){if(c.length)COLS=c.map(function(x){return{id:x.id,n:x.name,ids:x.ids,pct:x.percent}});render()}).catch(function(){});api('/recommend').then(function(r){RECS=r;render()}).catch(function(){})}).catch(function(){$('me').onclick=function(){openLogin()}})}
 
 function adminDraw(){var el=$('adm');if(!el)return;Promise.all([api('/admin/stats'),api('/admin/pending'),api('/admin/payouts'),api('/admin/refunds'),api('/admin/reports'),api('/admin/audit'),api('/admin/device-orders'),api('/admin/sellers'),api('/admin/analytics')]).then(function(r){
  var d=r[0].daily.slice().reverse(),mx=Math.max.apply(null,d.map(function(x){return x.revenue||0}).concat([1])),bw=Math.max(6,Math.floor(300/Math.max(d.length,1))-4),
@@ -345,5 +345,22 @@ window.reloadStore=function(){return api('/items').then(function(rs){if(!rs.leng
 setInterval(function(){if(!document.hidden&&tab!=='adm')window.reloadStore()},60000);document.addEventListener('visibilitychange',function(){if(!document.hidden&&tab!=='adm')window.reloadStore()});
 adminDraw=function(){var el=$('adm');if(el&&!$('pc')){el.insertAdjacentHTML('beforebegin',draw());wire()}items();_a()};
 })();
+</script>
+<style id="lgs">
+#lgo{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.7);display:none;place-items:center;padding:16px}#lgo.on{display:grid}
+#lgo form{width:100%;max-width:380px;background:#14221b;color:#e8f1ec;border:1px solid #23372c;border-radius:20px;padding:26px}
+#lgo h2{margin:0 0 14px}#lgo input{display:block;width:100%;box-sizing:border-box;margin:8px 0;padding:12px 14px;border-radius:12px;border:1px solid #2b4436;background:#0f1a14;color:#e8f1ec;font:inherit}
+#lgo .b{width:100%;margin-top:10px;padding:12px;border:0;border-radius:99px;background:#ffc857;color:#2b2100;font-weight:700;cursor:pointer}#lgo .x{background:none;color:#9db3a6;margin-top:6px}
+#lge{color:#ff8a80;font-size:14px;min-height:20px}
+</style>
+<div id="lgo"><form id="lgf"><h2>Sign in</h2><input id="lgm" type="email" placeholder="Email" autocomplete="username" required><input id="lgp" type="password" placeholder="Password" autocomplete="current-password" required><div id="lge" role="alert"></div><button class="b" id="lgb">Sign in</button><button class="b x" type="button" id="lgc">Cancel</button></form></div>
+<script>
+window.openLogin=function(){$('lgo').classList.add('on');$('lgm').focus()};
+$('lgc').onclick=function(){$('lgo').classList.remove('on')};
+$('lgf').onsubmit=function(ev){ev.preventDefault();var b=$('lgb'),e=$('lge');b.disabled=true;e.textContent='';
+fetch('/api/store/login',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({email:$('lgm').value,password:$('lgp').value})})
+.then(function(r){return r.text().then(function(t){var j={};try{j=JSON.parse(t)}catch(x){}if(!r.ok)throw{s:r.status,m:j.error};return j})})
+.then(function(){location.reload()})
+.catch(function(x){e.textContent=x&&x.m==='not found'||x&&x.s===404?'The server has no sign-in yet. Deploy the new src/store-api.js.':(x&&x.m)||'Could not sign in. Try again.';b.disabled=false})};
 </script>
 </body></html>
