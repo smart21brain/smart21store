@@ -12,3 +12,10 @@
 3. extras/smart21store-playstore.html - optional Play Store style version (not deployed unless you copy it over public/smart21store.html).
 
 Deploy: copy the files over your project, deploy, then hard-refresh (the service worker may cache the old page).
+
+4. Play Store redesign (public/smart21store.html, also copied to root)
+   - Play-style layout: pill search with suggestions, For you / Top charts / Categories, bottom nav (mobile) and left menu (desktop), featured banners, shelves, list rows, full details page.
+   - ElectroLab look mixed in: green-black surfaces and green/gold palette, Poppins headings, gold-ring logo with gold "Store" wordmark, pill tabs with green glow, gold paid/Featured buttons.
+   - ElectroLab home content: greeting hero with stat chips and gold-ring logo, "Your progress" rings, "Continue" shortcuts, Achievements grid.
+   - Review text and item names are now HTML-escaped. Theme follows the device until the user picks one.
+   - Admin, API, Sync, Bundles, Orders, Plus pages keep their logic and use the new colors.
