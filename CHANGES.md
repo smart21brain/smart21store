@@ -42,3 +42,4 @@ Deploy: copy the files over your project, deploy, then hard-refresh (the service
      Push alerts now fire for wishlist price drops and for updates to owned items.
    - Run backend/store-schema-v4.sql ONCE before deploying the Worker.
    - Review text and item names are HTML-escaped.
+   - Featured banner is now a live carousel: auto-advances with a gold progress dot, pauses on hover/touch/focus, swipe, arrows, dots, keyboard arrows, parallax icons. Slides are built from live data: Featured items, Update available, Continue learning, New release, Bundle deal, Smart21 Plus.
