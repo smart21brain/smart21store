@@ -18,3 +18,11 @@ Everything is in this one folder. Open a terminal INSIDE this folder (where wran
    upload-samples.bat                      (uploads files to R2)
    npx wrangler d1 execute smart21store-db --remote --file=backend/seed-all-samples.sql
 9. Open https://smart21store.YOUR-NAME.workers.dev/   and /api/store/items
+
+
+## v4 update (icons, picks, coupons, seller stats)
+1. `npx wrangler d1 execute <your-db> --remote --file=backend/store-schema-v4.sql`  (run ONCE)
+2. `npx wrangler deploy`
+3. Hard-refresh the store once (service worker cache is now `s21store-v2`).
+4. Open Studio (rail > Studio) as admin to mark Featured / Editors' choice, upload icons and create coupons.
+5. Optional: set `window.S21_ELECTROLAB='https://your-electrolab-url/'` before the store script to point the "Open in ElectroLab" button. The button opens `<url>#store=<item id>`; ElectroLab needs a small handler that reads that hash and downloads the item.

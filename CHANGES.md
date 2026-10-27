@@ -13,9 +13,32 @@
 
 Deploy: copy the files over your project, deploy, then hard-refresh (the service worker may cache the old page).
 
-4. Play Store redesign (public/smart21store.html, also copied to root)
-   - Play-style layout: pill search with suggestions, For you / Top charts / Categories, bottom nav (mobile) and left menu (desktop), featured banners, shelves, list rows, full details page.
-   - ElectroLab look mixed in: green-black surfaces and green/gold palette, Poppins headings, gold-ring logo with gold "Store" wordmark, pill tabs with green glow, gold paid/Featured buttons.
-   - ElectroLab home content: greeting hero with stat chips and gold-ring logo, "Your progress" rings, "Continue" shortcuts, Achievements grid.
-   - Review text and item names are now HTML-escaped. Theme follows the device until the user picks one.
-   - Admin, API, Sync, Bundles, Orders, Plus pages keep their logic and use the new colors.
+4. Play Store + ElectroLab redesign (public/smart21store.html, also copied to root)
+   - Play layout: pill search with suggestions, For you / Top charts / Categories, bottom nav (mobile), left menu (desktop), featured banners, shelves, list rows, full details page.
+   - ElectroLab look: green-black surfaces, gold accents, Poppins, gold-ring logo, pill tabs, greeting hero, progress rings, Continue shortcuts, Achievements.
+   - Featured banners use the `featured` flag; "Editors' choice" shelf uses the new `editors` flag. Both are set from Studio.
+   - Real review counts (rating_count), What's new + Updated date on each item, real square app icons (upload from Studio).
+   - Browse by level (Nursery / Primary / Secondary / University) with age labels, developer pages, More from this seller.
+   - Downloads manager, Settings (theme, language, currency, Wi-Fi-only downloads, data saver, push, install), install banner, offline banner + cached items, loading skeletons.
+   - Learning path card on items, certificates (download/print) for finished paths, "Open in ElectroLab" button on electronics files.
+   - Studio (admin + sellers): sales chart, per-item downloads/sales/income/rating, icon upload, Featured / Editors' toggles, coupons, reported reviews.
+   - Backend: GET /api/store/items now returns notes, updated, seller name, flags (and the sample/seller columns that the unfiltered query was missing).
+     New: GET /api/store/icon/:id, POST /admin/items/:id/icon, POST /admin/items/:id/pick, GET/POST /admin/coupons, POST /admin/coupons/:code/delete, GET /seller/stats.
+     Push alerts now fire for wishlist price drops and for updates to owned items.
+   - Run backend/store-schema-v4.sql ONCE before deploying the Worker.
+   - Review text and item names are HTML-escaped.
+
+4. Play Store + ElectroLab redesign (public/smart21store.html, also copied to root)
+   - Play layout: pill search with suggestions, For you / Top charts / Categories, bottom nav (mobile), left menu (desktop), featured banners, shelves, list rows, full details page.
+   - ElectroLab look: green-black surfaces, gold accents, Poppins, gold-ring logo, pill tabs, greeting hero, progress rings, Continue shortcuts, Achievements.
+   - Featured banners use the featured flag; Editors choice shelf uses the new editors flag. Both are set from Studio.
+   - Real review counts (rating_count), Whats new + Updated date, real square app icons (upload from Studio).
+   - Browse by level with age labels, developer pages, More from this seller.
+   - Downloads manager, Settings (theme, language, currency, Wi-Fi-only downloads, data saver, push, install), install banner, offline banner + cached items, loading skeletons.
+   - Learning path card on items, certificates (download/print) for finished paths, Open in ElectroLab button on electronics files.
+   - Studio (admin + sellers): sales chart, per-item stats, icon upload, Featured / Editors toggles, coupons, reported reviews.
+   - Backend: GET /api/store/items now returns notes, updated, seller name, flags (and the sample/seller columns the unfiltered query was missing).
+     New: GET /api/store/icon/:id, POST /admin/items/:id/icon, POST /admin/items/:id/pick, GET/POST /admin/coupons, POST /admin/coupons/:code/delete, GET /seller/stats.
+     Push alerts now fire for wishlist price drops and for updates to owned items.
+   - Run backend/store-schema-v4.sql ONCE before deploying the Worker.
+   - Review text and item names are HTML-escaped.
