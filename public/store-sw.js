@@ -1,4 +1,4 @@
-const C='s21store-v2',A=['/smart21store.html','/store-manifest.json'];
+const C='s21store-v3',A=['/smart21store.html','/store-manifest.json'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A))));
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.pathname.startsWith('/api/'))return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request)))});
 self.addEventListener('push',e=>e.waitUntil(fetch('/api/store/notifications',{credentials:'include'}).then(r=>r.json()).then(n=>{const x=(n||[]).find(i=>!i.read)||{title:'Smart21Store',body:'You have a new alert'};return self.registration.showNotification(x.title,{body:x.body||'',icon:'/icons/store-192.png',data:x.link||'/smart21store.html'})}).catch(()=>self.registration.showNotification('Smart21Store',{body:'You have a new alert',icon:'/icons/store-192.png'}))));

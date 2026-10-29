@@ -60,3 +60,9 @@ Deploy: copy the files over your project, deploy, then hard-refresh (the service
    - Accessibility: text size, high contrast, reduce motion, easier-reading spacing, Listen (read aloud).
    - Seller insights in Studio: views (30 days), conversion, search words that led to each item.
    - Checkout now validates coupon codes with the server (GET /api/store/coupon/:code), so Studio and Rewards coupons show their real discount.
+
+6. Apps first + app slides
+   - Apps (installable files .apk/.aab/.exe/.msi/.dmg/.ipa/.deb, or anything published as "Application" in the Publish console) now sort before files in Files, Top charts, search results and the Home shelves.
+   - New "Apps" shelf at the top of Home (newest first).
+   - The Home banner carousel now starts with a "New app" slide for each of the 3 newest apps. It appears automatically after an upload (the catalog reloads every 60 seconds). If you uploaded screenshots, the first one shows in the slide; they all show on the app's details page.
+   - Service worker cache is now s21store-v3. Hard-refresh once after deploying. No database change needed.
