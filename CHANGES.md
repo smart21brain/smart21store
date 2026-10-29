@@ -66,3 +66,10 @@ Deploy: copy the files over your project, deploy, then hard-refresh (the service
    - New "Apps" shelf sits directly below the banner on Home (newest first).
    - The Home banner carousel now starts with a "New app" slide for each of the 3 newest apps. It appears automatically after an upload (the catalog reloads every 60 seconds). If you uploaded screenshots, the first one shows in the slide; they all show on the app's details page.
    - Service worker cache is now s21store-v5. Hard-refresh once after deploying. No database change needed.
+
+7. Admin dashboard ready for uploads
+   - Admin uploads publish immediately, even if SCAN_URL is set. Seller uploads still go to scan/review.
+   - Files over 96 MB now upload from the Publish console in 32 MB parts (no 100 MB limit, no wrangler step). Each part retries twice. New endpoints: /api/store/admin/uploads/start, /part, /finish.
+   - Studio > Items: items stuck in "scanning" now have a "Publish anyway" button.
+   - Service worker cache is now s21store-v6.
+   - Deploy with: npx wrangler deploy (no database change).
