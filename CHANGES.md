@@ -63,6 +63,6 @@ Deploy: copy the files over your project, deploy, then hard-refresh (the service
 
 6. Apps first + app slides
    - Apps (installable files .apk/.aab/.exe/.msi/.dmg/.ipa/.deb, or anything published as "Application" in the Publish console) now sort before files in Files, Top charts, search results and the Home shelves.
-   - New "Apps" shelf at the top of Home (newest first).
+   - New "Apps" shelf sits directly below the banner on Home (newest first).
    - The Home banner carousel now starts with a "New app" slide for each of the 3 newest apps. It appears automatically after an upload (the catalog reloads every 60 seconds). If you uploaded screenshots, the first one shows in the slide; they all show on the app's details page.
-   - Service worker cache is now s21store-v3. Hard-refresh once after deploying. No database change needed.
+   - Service worker cache is now s21store-v5. Hard-refresh once after deploying. No database change needed.

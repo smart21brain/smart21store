@@ -926,8 +926,8 @@ function homeH(){if(LOADING&&!(ITEMS[0]&&ITEMS[0].api)&&navigator.onLine!==false
  var cont=ITEMS.filter(function(i){return own(i)&&S.prog[i.id]>0&&S.prog[i.id]<100}),rc=recs().slice(0,6),extra=by(function(a,b){return b.r-a.r}).filter(function(i){return !own(i)&&!rc.some(function(z){return z.id===i.id})});
  while(rc.length<6&&extra.length)rc.push(extra.shift());
  var files=ITEMS.filter(function(i){return i.t==='Files'}),devs=ITEMS.filter(function(i){return i.t==='Devices'});
- return bannersH()+heroH()+feat()+chipsH()+shelf(P('apps'),ITEMS.filter(isApp).sort(function(a,b){return b.nw-a.nw}),'Files')+shelf(P('cont'),cont,'lib')+shelf(P('rvw'),(S.rvw||[]).map(it).filter(Boolean).slice(0,10),null)+lshelf(T('foryou'),rc,'charts',P('sugg'))
- +shelf(P('edit'),ITEMS.filter(function(i){return i.ed}),'charts',P('edits'))
+ return bannersH()+shelf(P('apps'),ITEMS.filter(isApp).sort(function(a,b){return b.nw-a.nw}),'Files')+heroH()+feat()+chipsH()+shelf(P('cont'),cont,'lib')+shelf(P('rvw'),(S.rvw||[]).map(it).filter(Boolean).slice(0,10),null)+lshelf(T('foryou'),rc,'charts',P('sugg'))
+ +shelf(P('edit'),appsFirst(ITEMS.filter(function(i){return i.ed})),'charts',P('edits'))
  +shelf(P('topfree'),files.filter(function(i){return !i.p}).sort(function(a,b){return isApp(b)-isApp(a)||b.pop-a.pop}),'Files')
  +shelf(P('premium'),files.filter(function(i){return i.p}).sort(function(a,b){return isApp(b)-isApp(a)||b.pop-a.pop}),'Files')
  +shelf(T('devices'),devs,'Devices')
