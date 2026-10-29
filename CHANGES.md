@@ -43,3 +43,20 @@ Deploy: copy the files over your project, deploy, then hard-refresh (the service
    - Run backend/store-schema-v4.sql ONCE before deploying the Worker.
    - Review text and item names are HTML-escaped.
    - Featured banner is now a live carousel: auto-advances with a gold progress dot, pauses on hover/touch/focus, swipe, arrows, dots, keyboard arrows, parallax icons. Slides are built from live data: Featured items, Update available, Continue learning, New release, Bundle deal, Smart21 Plus.
+
+5. v5 features (run backend/store-schema-v5.sql ONCE, then deploy)
+   - Trending searches + recent searches under the search box; Recently viewed shelf on Home.
+   - Price watch ("Notify me on price drop") with push alerts; Watching list in Library.
+   - Reviews: Helpful votes, sort (newest / highest / most helpful), verified-only filter, seller replies.
+   - Compare up to 3 devices side by side.
+   - Share poster with a real QR code for items, classes and invites (download / print).
+   - Classes: teacher creates a class, students join with a code (or ?join=CODE), teacher pushes free or Classroom/School-licensed files, progress report per student.
+   - Gifts: gift message at checkout, "Send as a gift" button; recipients get a notification with the message.
+   - Shareable wishlists (?list=CODE): visitors can gift items straight to the owner's library.
+   - Rewards: points for installs, reviews, referrals and a daily streak; redeem for one-time coupons.
+   - Invite friends page with code, WhatsApp share, poster and friends-joined progress.
+   - Download manager: chunked, resumable downloads kept in IndexedDB, pause / resume / cancel, auto-resume when the connection returns while the app is open.
+   - French and Arabic (right-to-left) for all new screens; Swahili completed.
+   - Accessibility: text size, high contrast, reduce motion, easier-reading spacing, Listen (read aloud).
+   - Seller insights in Studio: views (30 days), conversion, search words that led to each item.
+   - Checkout now validates coupon codes with the server (GET /api/store/coupon/:code), so Studio and Rewards coupons show their real discount.

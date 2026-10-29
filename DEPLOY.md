@@ -26,3 +26,14 @@ Everything is in this one folder. Open a terminal INSIDE this folder (where wran
 3. Hard-refresh the store once (service worker cache is now `s21store-v2`).
 4. Open Studio (rail > Studio) as admin to mark Featured / Editors' choice, upload icons and create coupons.
 5. Optional: set `window.S21_ELECTROLAB='https://your-electrolab-url/'` before the store script to point the "Open in ElectroLab" button. The button opens `<url>#store=<item id>`; ElectroLab needs a small handler that reads that hash and downloads the item.
+
+
+## v5 update
+1. npx wrangler d1 execute <your-db> --remote --file=backend/store-schema-v5.sql   (run ONCE, after v4)
+2. npx wrangler deploy
+3. Hard-refresh once (service worker cache is s21store-v2).
+Notes:
+- Classes: only users whose account role is teacher (or admin) can create classes. A file can be pushed to a class if it is free, the teacher published it, or the teacher owns it with a Classroom / School license.
+- Rewards are computed from your existing data (library, reviews, referral uses) and are safe to re-sync; redeeming creates a one-time coupon valid 30 days.
+- Downloads use HTTP Range requests against /api/store/file. They resume after a dropped connection while the app is open; browsers do not allow fully closed-app background downloads in a web app.
+- Trending searches need the existing search logging (store_searches). Per-item views and search words start counting after this update.
