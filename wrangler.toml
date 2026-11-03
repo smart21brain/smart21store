@@ -3,12 +3,12 @@ main = "src/index.js"
 compatibility_date = "2025-10-01"
 
 # Serves smart21store.html, icons, manifest and service worker.
-# The Worker runs first for /api/* and for the store page + SEO routes (robots.txt, sitemap.xml, /item/*),
+# The Worker runs first for /api/* and for the store page + SEO routes (/item/*),
 # so it can add canonical links and structured data. Everything else is served straight from ./public.
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/api/*", "/", "/smart21store", "/smart21store.html", "/robots.txt", "/sitemap.xml", "/item/*"]
+run_worker_first = ["/api/*", "/", "/smart21store", "/smart21store.html", "/item/*"]
 
 [[d1_databases]]
 binding = "DB"
@@ -20,8 +20,8 @@ binding = "MATERIALS"
 bucket_name = "smart21store-files"
 
 # SEO: your public address (no trailing slash). Used for canonical links, sitemap and social tags.
-# [vars]
-# SITE_URL = "https://smart21store.smart21brain.com"
+[vars]
+SITE_URL = "https://smart21store.smart21brain.com"
 # GOOGLE_SITE_VERIFICATION = "paste-token-from-search-console"
 
 [ai]

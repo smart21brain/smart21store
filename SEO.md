@@ -8,9 +8,12 @@
 - `/api/*` answers are marked `noindex`. `login.html` is `noindex`.
 - `wrangler.toml`: the Worker now runs first for the store page and SEO routes (needed to add the tags).
 
+## robots.txt and sitemap.xml are now real files
+They are in `public/`. Both already use `https://smart21store.smart21brain.com`. Update the sitemap whenever you add items (or delete both files and remove nothing else: the Worker in `src/seo.js` will then build them live, once `/robots.txt` and `/sitemap.xml` are added back to `run_worker_first` in `wrangler.toml`).
+
 ## Do these 4 things (about 10 minutes)
-1. In `wrangler.toml`, remove the `#` from the `[vars]` lines and set your real address, e.g.
-   `SITE_URL = "https://store.smart21brain.com"` (no slash at the end). Then `npx wrangler deploy`.
+1. In `wrangler.toml`, remove the `#` from the `[vars]` lines and set your real address, (already set to
+   `https://smart21store.smart21brain.com` in `wrangler.toml`). Run `npx wrangler deploy`.
    Use a custom domain, not `*.workers.dev`, if you want to rank. Cloudflare dashboard > Workers > smart21store > Settings > Domains & Routes.
 2. Open https://search.google.com/search-console and add your site (Domain or URL-prefix).
    If it asks for an HTML tag, copy only the token and put it in `GOOGLE_SITE_VERIFICATION` in `[vars]`, redeploy, then click Verify.

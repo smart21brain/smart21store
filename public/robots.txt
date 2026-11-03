@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /api/store/items
+Disallow: /api/
+Disallow: /login.html
+
+Sitemap: https://smart21store.smart21brain.com/sitemap.xml
