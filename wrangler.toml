@@ -21,7 +21,7 @@ bucket_name = "smart21store-files"
 
 # SEO: your public address (no trailing slash). Used for canonical links, sitemap and social tags.
 # [vars]
-# SITE_URL = "https://store.smart21brain.com"
+# SITE_URL = "https://smart21store.smart21brain.com"
 # GOOGLE_SITE_VERIFICATION = "paste-token-from-search-console"
 
 [ai]
