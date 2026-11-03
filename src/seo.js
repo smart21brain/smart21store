@@ -159,7 +159,7 @@ async function home(request, env, url) {
     .transform(res);
   const h = new Headers(out.headers);
   h.set('content-type', 'text/html; charset=utf-8');
-  h.set('cache-control', 'public, max-age=300');
+  h.set('cache-control', 'no-cache, must-revalidate');
   return new Response(out.body, { status: 200, headers: h });
 }
 

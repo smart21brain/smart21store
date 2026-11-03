@@ -742,7 +742,7 @@ var _l=window.loadMe;setInterval(go,700);render()})();
 /* no tap/focus blob on the bottom navigation */
 *{-webkit-tap-highlight-color:transparent}#bn button,#bn button:focus,#bn button:active{outline:0;box-shadow:none;-webkit-user-select:none;user-select:none}#bn button:not(.on) span{background:none!important;box-shadow:none!important}
 /* compare bar: fully hidden until something is added (its edge was peeking at the bottom) */
-#cmpbar:not(.on){visibility:hidden;opacity:0;pointer-events:none;transform:translate(-50%,300%)}
+#cmpbar:not(.on){display:none!important}
 </style>
 <div id="pfm" role="dialog" aria-label="Profile"></div>
 <script id="pfj">
