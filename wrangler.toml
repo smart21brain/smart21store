@@ -8,7 +8,7 @@ compatibility_date = "2025-10-01"
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/api/*", "/", "/smart21store", "/smart21store.html", "/item/*"]
+run_worker_first = ["/api/*", "/", "/smart21store", "/smart21store.html", "/robots.txt", "/sitemap.xml", "/item/*"]
 
 [[d1_databases]]
 binding = "DB"

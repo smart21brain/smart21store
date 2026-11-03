@@ -8,8 +8,8 @@
 - `/api/*` answers are marked `noindex`. `login.html` is `noindex`.
 - `wrangler.toml`: the Worker now runs first for the store page and SEO routes (needed to add the tags).
 
-## robots.txt and sitemap.xml are now real files
-They are in `public/`. Both already use `https://smart21store.smart21brain.com`. Update the sitemap whenever you add items (or delete both files and remove nothing else: the Worker in `src/seo.js` will then build them live, once `/robots.txt` and `/sitemap.xml` are added back to `run_worker_first` in `wrangler.toml`).
+## robots.txt and sitemap.xml
+The Worker builds them live from your database, so new items appear automatically. Open `/sitemap.xml` and `/robots.txt` on your site to see them.
 
 ## Do these 4 things (about 10 minutes)
 1. In `wrangler.toml`, remove the `#` from the `[vars]` lines and set your real address, (already set to
