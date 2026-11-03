@@ -1,6 +1,7 @@
 // Smart21Store Worker entry. Tiny router matching what store-api.js expects:
 // handlers receive {request, env, url, params, ctx} and are registered with r.get / r.post.
 import { registerStore } from './store-api.js';
+import { handleSeo } from './seo.js';
 
 function makeRouter() {
   const routes = [];
@@ -38,11 +39,16 @@ registerStore(router);
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname.startsWith('/api/')) return router.handle(request, env, ctx);
-    // Home page: open the store
-    if (url.pathname === '/' || url.pathname === '/index.html') {
-      return Response.redirect(url.origin + '/smart21store.html', 302);
+    if (url.pathname.startsWith('/api/')) {
+      // API answers are data, not pages: keep them out of Google's index.
+      const r = await router.handle(request, env, ctx);
+      const h = new Headers(r.headers);
+      h.set('x-robots-tag', 'noindex');
+      return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
     }
+    // SEO routes: robots.txt, sitemap.xml, /item/<id>-<name>, and the store page at "/" with SEO tags
+    const seo = await handleSeo(request, env, ctx);
+    if (seo) return seo;
     // Any other path: serve the static files (page, icons, manifest, service worker)
     if (env.ASSETS) return env.ASSETS.fetch(request);
     return new Response('Not found', { status: 404 });

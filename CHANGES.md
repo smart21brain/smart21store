@@ -1,3 +1,7 @@
+## SEO update
+- Added src/seo.js: robots.txt, sitemap.xml, crawlable /item/<id>-<name> pages, canonical + social tags + structured data on the store page. See SEO.md for the 4 setup steps (set SITE_URL, Search Console, sitemap, request indexing).
+- wrangler.toml: Worker runs first for /, /smart21store(.html), /robots.txt, /sitemap.xml, /item/*. Redeploy with `npx wrangler deploy`.
+
 # Smart21Store - what changed
 
 1. public/smart21store.html
