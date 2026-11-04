@@ -14,9 +14,7 @@ Everything is in this one folder. Open a terminal INSIDE this folder (where wran
    npx wrangler d1 execute smart21store-db --remote --file=users.sql
 6. Secrets: npx wrangler secret put STORE_SECRET  (also PAY_API_URL, PAY_API_KEY, PAY_WEBHOOK_SECRET, SCAN_SECRET)
 7. Deploy: npx wrangler deploy
-8. Sample files (37 files):
-   upload-samples.bat                      (uploads files to R2)
-   npx wrangler d1 execute smart21store-db --remote --file=backend/seed-all-samples.sql
+8. No sample data is included any more. Add your real items from the Admin tab (see REAL-DATA.md).
 9. Open https://smart21store.YOUR-NAME.workers.dev/   and /api/store/items
 
 
