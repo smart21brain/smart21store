@@ -12,6 +12,7 @@ Ratings are calculated from real reviews (only people who own an item can review
 ## Clean your live store (once)
 1. Back up: `npx wrangler d1 export smart21store-db --remote --output=backup-before-cleanup.sql`
 2. Remove the sample items: `npx wrangler d1 execute smart21store-db --remote --file=backend/remove-sample-data.sql`
+   (Optional afterwards: run `backend\remove-sample-data-extras.bat` to tidy leftovers in tables from later updates. "no such table" there is fine.)
    This deletes the 37 sample items (ids 1-6 and 12-42), their reviews, libraries and wishlists, the demo bundles, and the two sample coupons (edit the file if you want to keep the coupons). It keeps the Smart21 Plus and School plans (ids 9001-9004), all orders and users.
 3. Deploy: `npx wrangler deploy`
 4. Sample files uploaded to R2 stay there and cost storage. Delete them in the Cloudflare dashboard (R2 > your bucket > store/) if you no longer need them.
