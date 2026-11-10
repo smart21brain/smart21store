@@ -703,19 +703,52 @@ adminDraw=function(){if(!(ME&&ME.role==='admin'))return;var el=$('adm');if(el&&!
 #lgo .b{width:100%;margin-top:10px;padding:12px;border:0;border-radius:99px;background:#ffc857;color:#2b2100;font-weight:700;cursor:pointer}#lgo .x{background:none;color:#9db3a6;margin-top:6px}
 #lge{color:#ff8a80;font-size:14px;min-height:20px}
 </style>
-<div id="lgo"><form id="lgf"><h2>Sign in</h2><input id="lgm" type="email" placeholder="Email" autocomplete="username" required><input id="lgp" type="password" placeholder="Password" autocomplete="current-password" required><div id="lge" role="alert"></div><button class="b" id="lgb">Sign in</button><button class="b x" type="button" id="lgc">Cancel</button></form></div>
+<div id="lgo"><form id="lgf" novalidate><h2 id="lgh">Sign in</h2>
+<div class="tb" role="tablist"><button type="button" id="lgt1" class="on" role="tab">Sign in</button><button type="button" id="lgt2" role="tab">Create account</button></div>
+<input id="lgn" type="text" placeholder="Full name" autocomplete="name" maxlength="80" style="display:none">
+<input id="lgm" type="email" placeholder="Email" autocomplete="username" required>
+<div class="pw"><input id="lgp" type="password" placeholder="Password" autocomplete="current-password" required><button type="button" id="lgs" aria-label="Show password">Show</button></div>
+<input id="lgq" type="password" placeholder="Confirm password" autocomplete="new-password" style="display:none">
+<small id="lgx" style="display:none">At least 8 characters, with a letter and a number.</small>
+<div id="lge" role="alert"></div><button class="b" id="lgb">Sign in</button><div id="lgg" style="display:none"><div class="or"><span>or</span></div><div id="lggb" style="display:flex;justify-content:center;min-height:44px"></div></div><button class="b x" type="button" id="lgc">Cancel</button></form></div>
+<style>
+#lgo .tb{display:flex;gap:6px;margin-bottom:8px}#lgo .tb button{flex:1;padding:9px;border:1px solid #2b4436;border-radius:99px;background:none;color:#9db3a6;font:600 13px inherit;cursor:pointer}#lgo .tb button.on{background:#0B6E4F;border-color:#0B6E4F;color:#fff}
+#lgo .pw{position:relative}#lgo .pw input{padding-right:64px}#lgo .pw button{position:absolute;right:8px;top:14px;background:none;border:0;color:#8be3b8;font:600 12px inherit;cursor:pointer;padding:4px 6px}
+#lgo small{color:#9db3a6;font-size:12px}
+#lgo .or{display:flex;align-items:center;gap:10px;color:#9db3a6;font-size:12px;margin:14px 0 8px}#lgo .or:before,#lgo .or:after{content:'';flex:1;height:1px;background:#23372c}
+</style>
 <script>
-window.openLogin=function(){$('lgo').classList.add('on');$('lgm').focus()};
+(function(){var reg=false;
+function mode(r){reg=r;$('lgh').textContent=r?'Create account':'Sign in';$('lgb').textContent=r?'Create account':'Sign in';$('lgt1').classList.toggle('on',!r);$('lgt2').classList.toggle('on',r);
+$('lgn').style.display=$('lgq').style.display=$('lgx').style.display=r?'block':'none';$('lgp').autocomplete=r?'new-password':'current-password';$('lge').textContent='';$('lge').style.color=''}
+window.openLogin=function(r){mode(r===true);$('lgo').classList.add('on');(reg?$('lgn'):$('lgm')).focus()};
+$('lgt1').onclick=function(){mode(false)};$('lgt2').onclick=function(){mode(true)};
 $('lgc').onclick=function(){$('lgo').classList.remove('on')};
-$('lgf').onsubmit=function(ev){ev.preventDefault();var b=$('lgb'),e=$('lge');b.disabled=true;e.textContent='';
-fetch('/api/store/login',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({email:$('lgm').value,password:$('lgp').value})})
+$('lgo').addEventListener('mousedown',function(e){if(e.target===this)this.classList.remove('on')});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')$('lgo').classList.remove('on')});
+$('lgs').onclick=function(){var h=$('lgp').type==='password';$('lgp').type=$('lgq').type=h?'text':'password';this.textContent=h?'Hide':'Show'};
+$('lgf').onsubmit=function(ev){ev.preventDefault();var b=$('lgb'),e=$('lge'),em=$('lgm').value.trim(),pw=$('lgp').value;e.style.color='';e.textContent='';
+if(!em||!pw){e.textContent='Enter your email and password';return}
+if(reg){var nm=$('lgn').value.trim();
+if(nm.length<2){e.textContent='Enter your full name';return}
+if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){e.textContent='Enter a valid email address';return}
+if(pw.length<8||!/[A-Za-z]/.test(pw)||!/[0-9]/.test(pw)){e.textContent='Password needs 8+ characters with a letter and a number';return}
+if(pw!==$('lgq').value){e.textContent='Passwords do not match';return}}
+b.disabled=true;var old=b.textContent;b.textContent=reg?'Creating...':'Signing in...';
+fetch(reg?'/api/store/register':'/api/store/login',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify(reg?{name:$('lgn').value,email:em,password:pw}:{email:em,password:pw})})
 .then(function(r){return r.text().then(function(t){var j={};try{j=JSON.parse(t)}catch(x){}if(!r.ok)throw{s:r.status,m:j.error};return j})})
 .then(function(){return fetch('/api/store/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():r.text().then(function(t){var j={};try{j=JSON.parse(t)}catch(x){}return{bad:r.status+(j.error?' - '+j.error:'')}})}).catch(function(){return null})})
-.then(function(m){if(m&&m.bad){e.textContent='Password accepted, but the store could not read your account ('+m.bad+'). Send this message to your developer.';b.disabled=false;return}
-if(m&&m.role==='admin'){location.reload();return}
-if(m){e.style.color='#8be3b8';e.innerHTML='Signed in as <b>'+m.name+'</b>. This account has the role "'+(m.base||m.role)+'", not admin, so the Admin tab stays hidden.<br><br><button type="button" class="b" onclick="location.reload()">Continue</button>';b.disabled=false;return}
-e.textContent='Password accepted, but the browser did not keep the sign-in. Allow cookies for this site and try again.';b.disabled=false})
-.catch(function(x){e.textContent=x&&x.m==='not found'||x&&x.s===404?'The server has no sign-in yet. Deploy the new src/store-api.js.':(x&&x.m)||'Could not sign in. Try again.';b.disabled=false})};
+.then(function(m){if(m&&m.bad){e.textContent='Signed in, but the store could not read your account ('+m.bad+'). Send this message to your developer.';b.disabled=false;b.textContent=old;return}
+if(m){location.reload();return}
+e.textContent='Signed in, but the browser did not keep the session. Allow cookies for this site and try again.';b.disabled=false;b.textContent=old})
+.catch(function(x){e.textContent=(x&&x.s===404)?'The server has no '+(reg?'sign-up':'sign-in')+' yet. Deploy the new src/store-api.js.':(x&&x.m)||'Could not '+(reg?'create the account':'sign in')+'. Try again.';b.disabled=false;b.textContent=old})};
+
+/* Google sign-in */
+fetch('/api/store/config').then(function(r){return r.json()}).then(function(c){if(!c.google_client_id)return;
+var sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.async=true;sc.onload=function(){try{google.accounts.id.initialize({client_id:c.google_client_id,callback:function(res){var e=$('lge');e.style.color='';e.textContent='';
+fetch('/api/store/google',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({credential:res.credential})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j})}).then(function(){location.reload()}).catch(function(j){e.textContent=(j&&j.error)||'Google sign-in failed. Try again.'})}});
+google.accounts.id.renderButton($('lggb'),{theme:'filled_black',size:'large',shape:'pill',text:'continue_with',width:300});$('lgg').style.display='block'}catch(x){}};document.head.appendChild(sc)}).catch(function(){});
+})();
 </script>
 <script id="adbs">
 (function(){var _r=render;render=function(){if(tab==='adm'&&!(ME&&ME.role==='admin'))tab='home';_r();var m=$('me');if(!m)return;if(!ME||ME.role!=='admin'){var x=$('adb');if(x)x.remove();return}

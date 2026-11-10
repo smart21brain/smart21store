@@ -27,7 +27,10 @@ export async function hashPassword(password, saltHex) {
 
 export async function verifyPassword(password, hashHex, saltHex) {
   const { hash } = await hashPassword(password, saltHex);
-  return hash === hashHex;
+  if (typeof hashHex !== 'string' || hash.length !== hashHex.length) return false;
+  let diff = 0;
+  for (let i = 0; i < hash.length; i++) diff |= hash.charCodeAt(i) ^ hashHex.charCodeAt(i);
+  return diff === 0;
 }
 
 function randomToken() {
@@ -42,33 +45,40 @@ export async function createSession(db, userId) {
   return { token, expires };
 }
 
-export function sessionCookie(token, expires) {
+// Pass env.COOKIE_DOMAIN (e.g. ".smart21brain.com") so ONE sign-in works on the store and on Smart21Brain.
+// Without a domain the cookie belongs to the current host only.
+export function sessionCookie(token, expires, domain) {
   const expiresStr = new Date(expires).toUTCString();
-  return `s21_session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=${expiresStr}`;
+  return `s21_session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=${expiresStr}` + (domain ? `; Domain=${domain}` : '');
 }
 
-export function clearSessionCookie() {
-  return 's21_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
+export function clearSessionCookie(domain) {
+  return 's21_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0' + (domain ? `; Domain=${domain}` : '');
 }
 
-function getCookie(request, name) {
-  const header = request.headers.get('Cookie') || '';
-  const match = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-  return match ? match[1] : null;
+// Every s21_session value the browser sent (an old host-only cookie and the shared-domain cookie can both exist).
+export function getCookies(request, name) {
+  const out = [];
+  for (const part of (request.headers.get('Cookie') || '').split(';')) {
+    const i = part.indexOf('=');
+    if (i > 0 && part.slice(0, i).trim() === name) out.push(part.slice(i + 1).trim());
+  }
+  return out;
 }
 
 // Looks up the session cookie and returns the user row, or null.
 export async function getSessionUser(request, db) {
-  const token = getCookie(request, 's21_session');
-  if (!token) return null;
-  const session = await db.prepare(
-    'SELECT * FROM sessions WHERE token = ? AND expires_at > datetime(\'now\')'
-  ).bind(token).first();
-  if (!session) return null;
-  const user = await db.prepare(
-    'SELECT id, name, email, role, avatar_key, created_at FROM users WHERE id = ?'
-  ).bind(session.user_id).first();
-  return user || null;
+  for (const token of getCookies(request, 's21_session')) {
+    const session = await db.prepare(
+      'SELECT * FROM sessions WHERE token = ? AND expires_at > datetime(\'now\')'
+    ).bind(token).first();
+    if (!session) continue;
+    const user = await db.prepare(
+      'SELECT id, name, email, role, avatar_key, created_at FROM users WHERE id = ?'
+    ).bind(session.user_id).first();
+    if (user) return user;
+  }
+  return null;
 }
 
 export function json(data, init = {}) {

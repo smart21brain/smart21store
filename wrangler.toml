@@ -22,6 +22,11 @@ bucket_name = "smart21store-files"
 # SEO: your public address (no trailing slash). Used for canonical links, sitemap and social tags.
 [vars]
 SITE_URL = "https://smart21store.smart21brain.com"
+# One sign-in for Smart21Brain and the store: share the session cookie across *.smart21brain.com.
+# Set the SAME value in Smart21Brain's wrangler.toml and use the updated src/lib/auth.js there too.
+COOKIE_DOMAIN = ".smart21brain.com"
+# Google sign-in: OAuth Web client ID from Google Cloud Console (public value, not a secret)
+# GOOGLE_CLIENT_ID = "1234567890-abc.apps.googleusercontent.com"
 # GOOGLE_SITE_VERIFICATION = "paste-token-from-search-console"
 
 [ai]

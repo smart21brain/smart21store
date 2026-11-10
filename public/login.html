@@ -2,19 +2,39 @@
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d1712;color:#e8f1ec;font:16px/1.4 Poppins,'Segoe UI',Roboto,sans-serif;padding:16px}
 .c{width:100%;max-width:380px;background:#14221b;border:1px solid #23372c;border-radius:20px;padding:28px}
-h1{margin:0 0 4px;font-size:22px}h1 b{color:#ffc857}p{margin:0 0 18px;color:#9db3a6;font-size:14px}
+h1{margin:0 0 4px;font-size:22px}h1 b{color:#ffc857}p{margin:0 0 14px;color:#9db3a6;font-size:14px}
+.tb{display:flex;gap:6px;margin-bottom:6px}.tb button{flex:1;margin:0;padding:9px;border:1px solid #2b4436;border-radius:99px;background:none;color:#9db3a6;font:600 13px inherit;cursor:pointer}.tb button.on{background:#0B6E4F;border-color:#0B6E4F;color:#fff}
 label{display:block;font-size:13px;color:#9db3a6;margin:12px 0 4px}
 input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #2b4436;background:#0f1a14;color:#e8f1ec;font:inherit}
-input:focus{outline:2px solid #0B6E4F}
-button{width:100%;margin-top:18px;padding:12px;border:0;border-radius:99px;background:#ffc857;color:#2b2100;font:600 15px inherit;cursor:pointer}
-button:disabled{opacity:.6}#e{color:#ff8a80;font-size:14px;min-height:20px;margin-top:10px}a{color:#8be3b8;font-size:14px}
-</style></head><body><form class="c" id="f"><h1>Smart21<b>Store</b></h1><p>Sign in with your Smart21Brain account.</p>
+input:focus{outline:2px solid #0B6E4F}.pw{position:relative}.pw input{padding-right:64px}
+.pw button{position:absolute;right:8px;top:7px;width:auto;margin:0;background:none;color:#8be3b8;font:600 12px inherit;padding:6px}
+small{color:#9db3a6;font-size:12px}.r{display:none}.reg .r{display:block}
+button.go{width:100%;margin-top:18px;padding:12px;border:0;border-radius:99px;background:#ffc857;color:#2b2100;font:600 15px inherit;cursor:pointer}
+button{border:0;cursor:pointer}button:disabled{opacity:.6}#e{color:#ff8a80;font-size:14px;min-height:20px;margin-top:10px}a{color:#8be3b8;font-size:14px}
+.or{display:flex;align-items:center;gap:10px;color:#9db3a6;font-size:12px;margin:16px 0 8px}.or:before,.or:after{content:'';flex:1;height:1px;background:#23372c}
+</style></head><body><form class="c" id="f" novalidate><h1>Smart21<b>Store</b></h1><p id="sub">Sign in with your Smart21Brain account.</p>
+<div class="tb"><button type="button" id="t1" class="on">Sign in</button><button type="button" id="t2">Create account</button></div>
+<div class="r"><label for="nm">Full name</label><input id="nm" type="text" autocomplete="name" maxlength="80"></div>
 <label for="em">Email</label><input id="em" type="email" autocomplete="username" required>
-<label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required>
-<div id="e" role="alert"></div><button id="b">Sign in</button><p style="margin-top:16px"><a href="/">Back to the store</a></p></form>
+<label for="pw">Password</label><div class="pw"><input id="pw" type="password" autocomplete="current-password" required><button type="button" id="sh">Show</button></div>
+<div class="r"><label for="pw2">Confirm password</label><input id="pw2" type="password" autocomplete="new-password"><small>At least 8 characters, with a letter and a number.</small></div>
+<div id="e" role="alert"></div><button class="go" id="b">Sign in</button><div id="gg" style="display:none"><div class="or"><span>or</span></div><div id="ggb" style="display:flex;justify-content:center;min-height:44px"></div></div><p style="margin-top:16px"><a href="/">Back to the store</a></p></form>
 <script>
-var n=new URLSearchParams(location.search).get('next')||'/';if(n[0]!=='/'||n[1]==='/'||/[\\:]/.test(n))n='/';
-document.getElementById('f').onsubmit=function(ev){ev.preventDefault();var b=document.getElementById('b'),e=document.getElementById('e');b.disabled=true;e.textContent='';
-fetch('/api/store/login',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({email:document.getElementById('em').value,password:document.getElementById('pw').value})})
-.then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j})}).then(function(){location.href=n}).catch(function(j){e.textContent=(j&&j.error)||'Could not sign in. Try again.';b.disabled=false})};
+var $=function(i){return document.getElementById(i)},reg=false,n=new URLSearchParams(location.search).get('next')||'/';if(n[0]!=='/'||n[1]==='/'||/[\\:]/.test(n))n='/';
+function mode(r){reg=r;$('f').classList.toggle('reg',r);$('t1').classList.toggle('on',!r);$('t2').classList.toggle('on',r);$('b').textContent=r?'Create account':'Sign in';$('sub').textContent=r?'Create a free Smart21Brain account.':'Sign in with your Smart21Brain account.';$('pw').autocomplete=r?'new-password':'current-password';$('e').textContent=''}
+$('t1').onclick=function(){mode(false)};$('t2').onclick=function(){mode(true)};if(location.hash==='#register')mode(true);
+$('sh').onclick=function(){var h=$('pw').type==='password';$('pw').type=$('pw2').type=h?'text':'password';this.textContent=h?'Hide':'Show'};
+$('f').onsubmit=function(ev){ev.preventDefault();var b=$('b'),e=$('e'),em=$('em').value.trim(),pw=$('pw').value;e.textContent='';
+if(!em||!pw){e.textContent='Enter your email and password';return}
+if(reg){if($('nm').value.trim().length<2){e.textContent='Enter your full name';return}
+if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){e.textContent='Enter a valid email address';return}
+if(pw.length<8||!/[A-Za-z]/.test(pw)||!/[0-9]/.test(pw)){e.textContent='Password needs 8+ characters with a letter and a number';return}
+if(pw!==$('pw2').value){e.textContent='Passwords do not match';return}}
+b.disabled=true;var old=b.textContent;b.textContent='Please wait...';
+fetch(reg?'/api/store/register':'/api/store/login',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify(reg?{name:$('nm').value,email:em,password:pw}:{email:em,password:pw})})
+.then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j})}).then(function(){location.href=n}).catch(function(j){e.textContent=(j&&j.error)||'Could not '+(reg?'create the account':'sign in')+'. Try again.';b.disabled=false;b.textContent=old})};
+fetch('/api/store/config').then(function(r){return r.json()}).then(function(c){if(!c.google_client_id)return;
+var sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.async=true;sc.onload=function(){try{google.accounts.id.initialize({client_id:c.google_client_id,callback:function(res){$('e').textContent='';
+fetch('/api/store/google',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({credential:res.credential})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j})}).then(function(){location.href=n}).catch(function(j){$('e').textContent=(j&&j.error)||'Google sign-in failed. Try again.'})}});
+google.accounts.id.renderButton($('ggb'),{theme:'filled_black',size:'large',shape:'pill',text:'continue_with',width:300});$('gg').style.display='block'}catch(x){}};document.head.appendChild(sc)}).catch(function(){});
 </script></body></html>

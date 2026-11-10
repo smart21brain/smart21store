@@ -35,3 +35,28 @@ Notes:
 - Rewards are computed from your existing data (library, reviews, referral uses) and are safe to re-sync; redeeming creates a one-time coupon valid 30 days.
 - Downloads use HTTP Range requests against /api/store/file. They resume after a dropped connection while the app is open; browsers do not allow fully closed-app background downloads in a web app.
 - Trending searches need the existing search logging (store_searches). Per-item views and search words start counting after this update.
+
+
+## v7 update (register + login)
+1. `npx wrangler d1 execute smart21store-db --remote --file=backend/store-schema-v7.sql`  (run ONCE)
+2. `npx wrangler deploy`
+- New `POST /api/store/register` (name, email, password: 8+ chars with a letter and a number). New accounts are always role `user`; an admin grants teacher/seller access.
+- Login and register are limited to 8 failed attempts per email+IP per 15 minutes. Register signs the user in immediately.
+- The store's Sign in popup now has Sign in / Create account tabs; `/login.html` has them too (`/login.html#register` opens the sign-up tab).
+
+
+## Google sign-in
+1. Google Cloud Console > APIs & Services > Credentials > Create credentials > OAuth client ID > Web application.
+2. Under "Authorized JavaScript origins" add your store address (e.g. https://smart21store.smart21brain.com and your workers.dev address). No redirect URI is needed.
+3. Copy the Client ID into wrangler.toml: `GOOGLE_CLIENT_ID = "....apps.googleusercontent.com"` (under [vars]), then `npx wrangler deploy`.
+- The "Continue with Google" button appears automatically once GOOGLE_CLIENT_ID is set; without it nothing changes.
+- A Google user whose verified email matches an existing account signs into that account; otherwise a new `user` account is created.
+
+
+## One sign-in for Smart21Brain + the store
+Both apps use the same D1 `users` + `sessions` tables, so they only need to share the session cookie.
+1. `COOKIE_DOMAIN = ".smart21brain.com"` is now set in this wrangler.toml. `npx wrangler deploy`.
+2. In the Smart21Brain project: copy this `src/lib/auth.js` over its own, add the same `COOKIE_DOMAIN` under [vars], and pass it where Brain sets/clears the cookie:
+   `sessionCookie(token, expires, env.COOKIE_DOMAIN)` and `clearSessionCookie(env.COOKIE_DOMAIN)` (call clearSessionCookie twice on logout, once without the domain, to remove any old cookie). Brain's session lookup should use `getSessionUser` from the same file.
+3. Both sites must be on https and on subdomains of smart21brain.com. Users who signed in before the change simply sign in once more.
+- Signing in or out on either site now signs in or out on both. Google sign-in and registration here also sign the user into Brain.

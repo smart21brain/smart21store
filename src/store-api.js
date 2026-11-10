@@ -1,6 +1,7 @@
 // Smart21Store API. In src/index.js:  import {registerStore} from './store-api.js';  registerStore(router);
 // Needs: env.DB (D1), env.MATERIALS (R2), secrets STORE_SECRET, PAY_API_URL, PAY_API_KEY, PAY_WEBHOOK_SECRET, optional SCAN_URL.
-import { getSessionUser, verifyPassword, createSession, sessionCookie, clearSessionCookie } from './lib/auth.js';
+import { getSessionUser, verifyPassword, hashPassword, createSession, sessionCookie, clearSessionCookie, getCookies } from './lib/auth.js';
+const sha32=()=>hex(crypto.getRandomValues(new Uint8Array(32)));
 const J=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{'content-type':'application/json'}});
 const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 async function hmac(secret,msg){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return hex(await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(msg)))}
@@ -8,9 +9,7 @@ async function hmac(secret,msg){const k=await crypto.subtle.importKey('raw',new 
 // Auth: same users+sessions tables as school/shop/institution (cookie s21_session).
 // store role: 'admin' (users.role=admin), 'seller' (teacher approved in store_sellers), else 'user'.
 async function getUser(request, env){
- const m=(request.headers.get('Cookie')||'').match(/(?:^|;\s*)s21_session=([^;]+)/);if(!m)return null;
- const ss=await env.DB.prepare("SELECT user_id FROM sessions WHERE token=? AND datetime(expires_at)>datetime('now')").bind(m[1]).first();if(!ss)return null;
- const u=await env.DB.prepare('SELECT id,name,email,role FROM users WHERE id=?').bind(ss.user_id).first();if(!u)return null;
+ let u=null;for(const tk of getCookies(request,'s21_session')){const ss=await env.DB.prepare("SELECT user_id FROM sessions WHERE token=? AND datetime(expires_at)>datetime('now')").bind(tk).first();if(!ss)continue;u=await env.DB.prepare('SELECT id,name,email,role FROM users WHERE id=?').bind(ss.user_id).first();if(u)break}if(!u)return null;
  let role=u.role==='admin'?'admin':'user';
  if(role==='user'&&u.role==='teacher'){const s=await env.DB.prepare('SELECT approved FROM store_sellers WHERE user_id=?').bind(u.id).first();if(s&&s.approved)role='seller'}
  return{id:u.id,name:u.name,email:u.email,role,base:u.role}}
@@ -35,18 +34,70 @@ async function pushTo(env,uid){if(!env.VAPID_PRIVATE_JWK||!env.VAPID_PUBLIC)retu
 const Jc=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{'content-type':'application/json','access-control-allow-origin':'*'}});
 async function keyAuth(c){const m=(c.request.headers.get('authorization')||'').match(/^Bearer (s21_[a-f0-9]+)$/);if(!m)return[null,J({error:'missing API key'},401)];const k=await c.env.DB.prepare('SELECT id FROM store_api_keys WHERE key_hash=? AND revoked=0').bind(await sha(m[1])).first();if(!k)return[null,J({error:'invalid key'},401)];const n=(await c.env.DB.prepare('INSERT INTO store_rate(key_id,minute,n) VALUES(?,?,1) ON CONFLICT(key_id,minute) DO UPDATE SET n=n+1 RETURNING n').bind(k.id,Math.floor(Date.now()/60000)).first()).n;if(n>60)return[null,J({error:'rate limit: 60 requests per minute'},429)];await c.env.DB.prepare('UPDATE store_api_keys SET calls=calls+1 WHERE id=?').bind(k.id).run();return[k,null]}
 const PUB="SELECT id,kind,name,description,subject,grade,file_type,price_tzs,rating_avg,rating_count,license,(SELECT MAX(version) FROM store_versions WHERE item_id=store_items.id) AS latest_version FROM store_items WHERE status='published' AND kind!='Plan'";
+
+// ---- Google Sign-In: verify the ID token (RS256) against Google's public keys ----
+let _jwks=null,_jwksAt=0;
+const gb64=t=>Uint8Array.from(atob(t.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(t.length/4)*4,'=')),c=>c.charCodeAt(0));
+async function verifyGoogle(idToken,clientId){
+ const parts=String(idToken||'').split('.');if(parts.length!==3)throw new Error('bad token');
+ const hd=JSON.parse(new TextDecoder().decode(gb64(parts[0]))),pl=JSON.parse(new TextDecoder().decode(gb64(parts[1])));
+ if(hd.alg!=='RS256')throw new Error('bad alg');
+ if(!_jwks||Date.now()-_jwksAt>3600000||!_jwks.keys.some(k=>k.kid===hd.kid)){const r=await fetch('https://www.googleapis.com/oauth2/v3/certs');if(!r.ok)throw new Error('keys unavailable');_jwks=await r.json();_jwksAt=Date.now()}
+ const jwk=_jwks.keys.find(k=>k.kid===hd.kid);if(!jwk)throw new Error('unknown key');
+ const key=await crypto.subtle.importKey('jwk',jwk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
+ const ok=await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,gb64(parts[2]),new TextEncoder().encode(parts[0]+'.'+parts[1]));
+ if(!ok)throw new Error('bad signature');
+ if(pl.aud!==clientId)throw new Error('wrong audience');
+ if(pl.iss!=='https://accounts.google.com'&&pl.iss!=='accounts.google.com')throw new Error('wrong issuer');
+ if(!pl.exp||pl.exp*1000<Date.now())throw new Error('expired');
+ if(!(pl.email_verified===true||pl.email_verified==='true'))throw new Error('email not verified');
+ return pl}
 export function registerStore(r){
  // Sign in / out on the store's own address (the cookie of another workers.dev address is never sent here).
  const sameOrigin=req=>{const o=req.headers.get('origin');return !o||new URL(o).host===new URL(req.url).host};
+ // ---- Brute-force guard: max 8 failed attempts per email+IP per 15 minutes (needs backend/store-schema-v7.sql; skipped quietly if the table is missing) ----
+ const akey=(req,email)=>(req.headers.get('cf-connecting-ip')||'?')+'|'+email;
+ const tooMany=async(env,k)=>{try{const x=await env.DB.prepare("SELECT COUNT(*) n FROM store_auth_attempts WHERE k=? AND created_at>datetime('now','-15 minutes')").bind(k).first();return x.n>=8}catch(e){return false}};
+ const failed=async(env,k)=>{try{await env.DB.prepare('INSERT INTO store_auth_attempts(k) VALUES(?)').bind(k).run();await env.DB.prepare("DELETE FROM store_auth_attempts WHERE created_at<datetime('now','-1 day')").run()}catch(e){}};
+ const clearFails=async(env,k)=>{try{await env.DB.prepare('DELETE FROM store_auth_attempts WHERE k=?').bind(k).run()}catch(e){}};
+ const okSession=async(env,row)=>{const ss=await createSession(env.DB,row.id);return new Response(JSON.stringify({ok:1,name:row.name,role:row.role}),{status:200,headers:{'content-type':'application/json','set-cookie':sessionCookie(ss.token,ss.expires,env.COOKIE_DOMAIN)}})};
  r.post('/api/store/login',async({request,env})=>{if(!sameOrigin(request))return J({error:'bad origin'},403);let b;try{b=await request.json()}catch(e){return J({error:'bad request'},400)}
   const email=String(b.email||'').trim().toLowerCase(),pw=String(b.password||'');if(!email||!pw)return J({error:'Enter your email and password'},400);
+  const k=akey(request,email);if(await tooMany(env,k))return J({error:'Too many attempts. Wait 15 minutes and try again.'},429);
   const row=await env.DB.prepare('SELECT * FROM users WHERE lower(email)=?').bind(email).first();
   const h=row&&(row.password_hash||row.pass_hash||row.hash),sl=row&&(row.password_salt||row.pass_salt||row.salt);
   if(row&&!(h&&sl))return J({error:'users table has no password_hash / password_salt columns'},500);
-  if(!row||!(await verifyPassword(pw,h,sl)))return J({error:'Wrong email or password'},401);
-  const ss=await createSession(env.DB,row.id);
-  return new Response(JSON.stringify({ok:1,name:row.name,role:row.role}),{status:200,headers:{'content-type':'application/json','set-cookie':sessionCookie(ss.token,ss.expires)}})});
- r.post('/api/store/logout',async({request,env})=>{if(!sameOrigin(request))return J({error:'bad origin'},403);const m=(request.headers.get('Cookie')||'').match(/(?:^|;\s*)s21_session=([^;]+)/);if(m)await env.DB.prepare('DELETE FROM sessions WHERE token=?').bind(m[1]).run();return new Response(JSON.stringify({ok:1}),{status:200,headers:{'content-type':'application/json','set-cookie':clearSessionCookie()}})});
+  if(!row){await hashPassword(pw);await failed(env,k);return J({error:'Wrong email or password'},401)}
+  if(!(await verifyPassword(pw,h,sl))){await failed(env,k);return J({error:'Wrong email or password'},401)}
+  await clearFails(env,k);return okSession(env,row)});
+ // Create an account (always role 'user'; teacher/seller access is granted by an admin) and sign in straight away.
+ r.post('/api/store/register',async({request,env})=>{if(!sameOrigin(request))return J({error:'bad origin'},403);let b;try{b=await request.json()}catch(e){return J({error:'bad request'},400)}
+  const name=String(b.name||'').trim().replace(/\s+/g,' '),email=String(b.email||'').trim().toLowerCase(),pw=String(b.password||'');
+  if(name.length<2||name.length>80)return J({error:'Enter your full name (2-80 characters)'},400);
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)||email.length>254)return J({error:'Enter a valid email address'},400);
+  if(pw.length<8)return J({error:'Password must be at least 8 characters'},400);
+  if(pw.length>200)return J({error:'Password is too long'},400);
+  if(!/[A-Za-z]/.test(pw)||!/[0-9]/.test(pw))return J({error:'Password needs at least one letter and one number'},400);
+  const k=akey(request,'register');if(await tooMany(env,k))return J({error:'Too many attempts. Try again later.'},429);
+  const ex=await env.DB.prepare('SELECT id FROM users WHERE lower(email)=?').bind(email).first();
+  if(ex){await failed(env,k);return J({error:'An account with this email already exists. Sign in instead.'},409)}
+  const {hash,salt}=await hashPassword(pw);
+  let row;try{row=await env.DB.prepare("INSERT INTO users(name,email,password_hash,password_salt,role) VALUES(?,?,?,?,'user') RETURNING id,name,role").bind(name,email,hash,salt).first()}
+  catch(e){if(/unique/i.test(String(e&&e.message)))return J({error:'An account with this email already exists. Sign in instead.'},409);throw e}
+  await failed(env,k);return okSession(env,row)});
+ // Public sign-in settings for the page (the Google client ID is public by design).
+ r.get('/api/store/config',async({env})=>J({google_client_id:env.GOOGLE_CLIENT_ID||null}));
+ // Sign in / sign up with Google. Existing accounts with the same verified email are signed in; otherwise a 'user' account is created.
+ r.post('/api/store/google',async({request,env})=>{if(!sameOrigin(request))return J({error:'bad origin'},403);if(!env.GOOGLE_CLIENT_ID)return J({error:'Google sign-in is not set up yet'},501);let b;try{b=await request.json()}catch(e){return J({error:'bad request'},400)}
+  let pl;try{pl=await verifyGoogle(b.credential,env.GOOGLE_CLIENT_ID)}catch(e){return J({error:'Google sign-in failed. Try again.'},401)}
+  const email=String(pl.email||'').trim().toLowerCase();if(!email)return J({error:'Google did not return an email'},400);
+  let row=await env.DB.prepare('SELECT * FROM users WHERE lower(email)=?').bind(email).first();
+  if(!row){const name=String(pl.name||email.split('@')[0]).trim().slice(0,80)||'Member';const {hash,salt}=await hashPassword(sha32());
+   try{row=await env.DB.prepare("INSERT INTO users(name,email,password_hash,password_salt,role) VALUES(?,?,?,?,'user') RETURNING id,name,role").bind(name,email,hash,salt).first()}
+   catch(e){row=await env.DB.prepare('SELECT * FROM users WHERE lower(email)=?').bind(email).first();if(!row)throw e}}
+  return okSession(env,row)});
+ r.post('/api/store/logout',async({request,env})=>{if(!sameOrigin(request))return J({error:'bad origin'},403);for(const t of getCookies(request,'s21_session'))await env.DB.prepare('DELETE FROM sessions WHERE token=?').bind(t).run();
+  const h=new Headers({'content-type':'application/json'});h.append('set-cookie',clearSessionCookie());if(env.COOKIE_DOMAIN)h.append('set-cookie',clearSessionCookie(env.COOKIE_DOMAIN));return new Response(JSON.stringify({ok:1}),{status:200,headers:h})});
  r.get('/api/store/items',async({env,url})=>{const k=url.searchParams.get('kind');const sel="SELECT *,(SELECT MAX(version) FROM store_versions WHERE item_id=store_items.id) AS latest,(SELECT notes FROM store_versions WHERE item_id=store_items.id ORDER BY version DESC LIMIT 1) AS notes,(SELECT created_at FROM store_versions WHERE item_id=store_items.id ORDER BY version DESC LIMIT 1) AS updated,(SELECT COUNT(*) FROM store_previews WHERE item_id=store_items.id) AS pv,(SELECT verified FROM store_sellers WHERE user_id=store_items.seller_id) AS sv,(SELECT name FROM users WHERE id=store_items.seller_id) AS seller,(store_items.seller_id IS NULL) AS off,(SELECT type FROM store_samples WHERE item_id=store_items.id) AS smp FROM store_items WHERE status='published' AND ";const q=k?env.DB.prepare(sel+"kind=? ORDER BY downloads DESC").bind(k):env.DB.prepare(sel+"kind!='Plan' ORDER BY downloads DESC");return J((await q.all()).results)});
  r.get('/api/store/items/:id',async({env,params,request})=>{const me=await getUser(request,env);const i=await env.DB.prepare("SELECT * FROM store_items WHERE id=? AND status='published'").bind(params.id).first();if(!i)return J({error:'not found'},404);const v=await env.DB.prepare('SELECT version,notes,created_at FROM store_versions WHERE item_id=? ORDER BY version DESC').bind(params.id).all();const rv=await env.DB.prepare('SELECT id,stars,body,verified,created_at,(SELECT name FROM users WHERE id=store_reviews.user_id) AS u,reply,reply_at,(SELECT COUNT(*) FROM store_review_votes WHERE review_id=store_reviews.id) AS helpful,(SELECT 1 FROM store_review_votes WHERE review_id=store_reviews.id AND user_id=?2) AS mine FROM store_reviews WHERE item_id=?1 AND reports<5 ORDER BY id DESC LIMIT 50').bind(params.id,me?me.id:0).all();return J({...i,versions:v.results,reviews:rv.results})});
  // Library, updates, wishlist
