@@ -83,3 +83,12 @@ Deploy: copy the files over your project, deploy, then hard-refresh (the service
    - Studio > Items: items stuck in "scanning" now have a "Publish anyway" button.
    - Service worker cache is now s21store-v6.
    - Deploy with: npx wrangler deploy (no database change).
+
+## v8: Banner + trailer on the store page (Play Store style)
+- Admin Publish console and Studio can now upload: app icon, wide **banner image** (5 MB), **trailer** (MP4/WebM up to 100 MB, or a YouTube link) and screenshots. Everything shows on the website straight away.
+- Details page: big banner hero with title, rating, size, downloads and Install on it, a "Watch trailer" button that plays the video inside the hero, trailer tile + arrows in the screenshot strip, tap a screenshot to enlarge, "More from developer / Similar" sidebar on laptops.
+- Responsive: phone (banner on top, details below), tablet and laptop (banner behind the title, two columns on laptop).
+- Featured carousel and share/SEO previews use the banner.
+- Also fixed: the catalogue now loads on first open for visitors who are not signed in.
+- **Run once before deploying:** `npx wrangler d1 execute smart21store-db --remote --file=backend/store-schema-v8.sql`, then `npx wrangler deploy`.
+- New API: POST /api/store/admin/items/:id/banner, POST /api/store/admin/items/:id/trailer, GET /api/store/banner/:id, GET /api/store/trailer/:id.

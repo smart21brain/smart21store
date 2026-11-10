@@ -71,6 +71,7 @@ async function itemPage(env, url, id) {
   const path = itemPath(i);
   if (url.pathname.replace(/\/$/, '') !== path) return Response.redirect(url.origin + path, 301);
 
+  try { const x = await env.DB.prepare('SELECT has_banner FROM store_items WHERE id=?').bind(i.id).first(); i.has_banner = x && x.has_banner; } catch (e) {} // needs backend/store-schema-v8.sql
   let rel = [];
   try {
     rel = (await env.DB.prepare("SELECT id,name,kind,price_tzs FROM store_items WHERE status='published' AND kind!='Plan' AND id!=? AND (subject=? OR kind=?) ORDER BY (subject=?) DESC, downloads DESC LIMIT 6").bind(i.id, i.subject || '', i.kind, i.subject || '').all()).results || [];
@@ -80,7 +81,7 @@ async function itemPage(env, url, id) {
   const title = clip(i.name, 45) + ' – ' + (i.subject ? i.subject + ' ' : '') + (i.kind === 'Files' ? 'Download' : i.kind) + ' | ' + NAME;
   const price = money(i.price_tzs);
   const desc = clip((i.description || i.name) + ' ' + (i.file_type ? i.file_type + ' · ' : '') + price + ' on ' + NAME + '.', 158);
-  const img = b + '/icons/store-512.png';
+  const img = +i.has_banner ? b + '/api/store/banner/' + i.id : b + '/icons/store-512.png';
 
   const product = {
     '@context': 'https://schema.org', '@type': 'Product', name: i.name, description: i.description || i.name,
