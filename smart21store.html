@@ -330,8 +330,8 @@ body.ps .shots{scroll-padding-inline:20px}
 .mdh{font:600 14px var(--display);margin:12px 0 0;color:var(--p)}
 .mdp{display:block;width:100%;max-height:170px;object-fit:cover;border-radius:12px;margin:6px 0}
 .pb2.o.on{border-color:var(--p);color:var(--p)}
-.pf.hb .pfg,.pf.hb .pfs{display:none}.pfb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.pf.hb::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.82),rgba(0,0,0,.1) 70%);pointer-events:none}.pf.hb .pfc{position:relative;z-index:2}
+.pf.hbn .pfg,.pf.hbn .pfs{display:none}.pfb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pf.hbn::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.82),rgba(0,0,0,.1) 70%);pointer-events:none}.pf.hbn .pfc{position:relative;z-index:2}
 /* tablet and laptop: banner fills the hero, title and buttons sit on it like the Play Store */
 @media(min-width:700px){
  body.ps #dlg{width:min(96vw,860px);max-width:860px}
@@ -1012,7 +1012,7 @@ var FT={i:0};
 function slidesData(){var out=[],seen={},add=function(o){if(out.length<7)out.push(o)},mk=function(i,label,sub,btn,prog){seen[i.id]=1;return{g:gr(i),i:i,label:label,title:i.n,sub:sub,meta:(i.r?i.r+' ★ · ':'')+i.sub,btn:btn||lbl(i),fn:'pact('+i.id+')',go:'det('+i.id+')',prog:prog,shot:i.pv>0?'/api/store/preview/'+i.id+'/0':'',ban:i.hb?'/api/store/banner/'+i.id+'?v='+i.hb:''}};
  ITEMS.filter(isApp).sort(function(a,b){return b.nw-a.nw}).slice(0,3).forEach(function(i){add(mk(i,P('napp'),i.d||(i.nt||'')))});
  var fl=ITEMS.filter(function(i){return i.feat});if(!fl.length)fl=by(function(a,b){return b.pop-a.pop});
- fl.slice(0,3).forEach(function(i){add(mk(i,P('feat')+' · '+i.t,i.d||''))});
+ fl.filter(function(i){return !seen[i.id]}).slice(0,3).forEach(function(i){add(mk(i,P('feat')+' · '+i.t,i.d||''))});
  var up=ITEMS.filter(old)[0];if(up&&!seen[up.id])add(mk(up,P('upav'),'v'+up.v+(up.nt?' · '+up.nt:''),T('upd')));
  var go=ITEMS.filter(function(i){return own(i)&&S.prog[i.id]>0&&S.prog[i.id]<100})[0];if(go&&!seen[go.id])add(mk(go,P('cont'),S.prog[go.id]+'% '+P('done'),P('cn'),S.prog[go.id]));
  var nw=by(function(a,b){return b.nw-a.nw}).filter(function(i){return !seen[i.id]})[0];if(nw)add(mk(nw,P('new')+' · '+nw.t,nw.d||''));
@@ -1020,7 +1020,7 @@ function slidesData(){var out=[],seen={},add=function(o){if(out.length<7)out.pus
  if(!isPlus())add({g:['#3d2fa8','#0a684b'],ic:'star',label:'Smart21 Plus',title:P('plus1'),sub:P('plus2'),meta:'Plus',btn:P('subs'),fn:"setTab('plus')",go:"setTab('plus')"});
  return out}
 function feat(){var l=slidesData();if(!l.length)return '';
- return '<div class="featw"><div class="feat" id="feat" tabindex="0" role="region" aria-roledescription="carousel" aria-label="'+P('feat')+'">'+l.map(function(s,k){return '<div class="pf'+(s.ban?' hb':'')+'" style="--g1:'+s.g[0]+';--g2:'+s.g[1]+'" role="group" aria-roledescription="slide" aria-label="'+(k+1)+' / '+l.length+'" onclick="'+s.go+'"><div class="pfg">'+ic(s.i?s.i.ic:s.ic)+'</div>'+(s.ban?'<img class="pfb" alt="" loading="lazy" src="'+s.ban+'">':'')+(s.shot?'<img class="pfs" alt="" loading="lazy" src="'+s.shot+'">':'')+'<div class="pfc"><span class="pfl">'+esc(s.label)+'</span><h3>'+esc(s.title)+'</h3><p>'+esc(s.sub)+'</p>'+(s.prog>0?'<div class="pfp"><i style="width:'+s.prog+'%"></i></div>':'')+'<div class="pfr">'+(s.i?pi(s.i,40):'<div class="pi" style="--sz:40px;--g1:'+s.g[0]+';--g2:'+s.g[1]+'">'+ic(s.ic)+'</div>')+'<span>'+esc(s.meta)+'</span><button class="pb2 g" onclick="event.stopPropagation();'+s.fn+'">'+esc(s.btn)+'</button></div></div></div>'}).join('')+'</div>'
+ return '<div class="featw"><div class="feat" id="feat" tabindex="0" role="region" aria-roledescription="carousel" aria-label="'+P('feat')+'">'+l.map(function(s,k){return '<div class="pf'+(s.ban?' hbn':'')+'" style="--g1:'+s.g[0]+';--g2:'+s.g[1]+'" role="group" aria-roledescription="slide" aria-label="'+(k+1)+' / '+l.length+'" onclick="'+s.go+'"><div class="pfg">'+ic(s.i?s.i.ic:s.ic)+'</div>'+(s.ban?'<img class="pfb" alt="" loading="lazy" src="'+s.ban+'">':'')+(s.shot?'<img class="pfs" alt="" loading="lazy" src="'+s.shot+'">':'')+'<div class="pfc"><span class="pfl">'+esc(s.label)+'</span><h3>'+esc(s.title)+'</h3><p>'+esc(s.sub)+'</p>'+(s.prog>0?'<div class="pfp"><i style="width:'+s.prog+'%"></i></div>':'')+'<div class="pfr">'+(s.i?pi(s.i,40):'<div class="pi" style="--sz:40px;--g1:'+s.g[0]+';--g2:'+s.g[1]+'">'+ic(s.ic)+'</div>')+'<span>'+esc(s.meta)+'</span><button class="pb2 g" onclick="event.stopPropagation();'+s.fn+'">'+esc(s.btn)+'</button></div></div></div>'}).join('')+'</div>'
  +(l.length>1?'<button class="fnav prev" aria-label="'+P('goprev')+'" onclick="featGo(-1,1)">'+ic('back')+'</button><button class="fnav next" aria-label="'+P('gonext')+'" onclick="featGo(1,1)">'+ic('arrow')+'</button><div class="fdots">'+l.map(function(s,k){return '<button aria-label="'+(k+1)+' / '+l.length+'" onclick="featGo('+k+')"><i></i></button>'}).join('')+'</div>':'')+'</div>'}
 window.featGo=function(k,rel){var w=document.querySelector('.featw');if(w&&w.__go)w.__go(rel?FT.i+k:k,true)};
 function featInit(){var w=document.querySelector('.featw');if(!w)return;var el=w.querySelector('.feat'),sl=el.children,n=sl.length,ds=w.querySelectorAll('.fdots button'),raf=0;
@@ -1054,7 +1054,7 @@ function homeH(){if(LOADING&&!(ITEMS[0]&&ITEMS[0].api)&&navigator.onLine!==false
  var cont=ITEMS.filter(function(i){return own(i)&&S.prog[i.id]>0&&S.prog[i.id]<100}),rc=recs().slice(0,6),extra=by(function(a,b){return b.r-a.r}).filter(function(i){return !own(i)&&!rc.some(function(z){return z.id===i.id})});
  while(rc.length<6&&extra.length)rc.push(extra.shift());
  var files=ITEMS.filter(function(i){return i.t==='Files'}),devs=ITEMS.filter(function(i){return i.t==='Devices'});
- return bannersH()+shelf(P('apps'),ITEMS.filter(isApp).sort(function(a,b){return b.nw-a.nw}),'Files')+heroH()+feat()+chipsH()+shelf(P('cont'),cont,'lib')+shelf(P('rvw'),(S.rvw||[]).map(it).filter(Boolean).slice(0,10),null)+lshelf(T('foryou'),rc,'charts',P('sugg'))
+ return bannersH()+heroH()+feat()+chipsH()+shelf(P('cont'),cont,'lib')+shelf(P('rvw'),(S.rvw||[]).map(it).filter(Boolean).slice(0,10),null)+shelf(P('apps'),ITEMS.filter(isApp).sort(function(a,b){return b.nw-a.nw}),'Files')+lshelf(T('foryou'),rc,'charts',P('sugg'))
  +shelf(P('edit'),appsFirst(ITEMS.filter(function(i){return i.ed})),'charts',P('edits'))
  +shelf(P('topfree'),files.filter(function(i){return !i.p}).sort(function(a,b){return isApp(b)-isApp(a)||b.pop-a.pop}),'Files')
  +shelf(P('premium'),files.filter(function(i){return i.p}).sort(function(a,b){return isApp(b)-isApp(a)||b.pop-a.pop}),'Files')
