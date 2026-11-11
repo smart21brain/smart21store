@@ -57,7 +57,7 @@ export function registerStore(r){
  const sameOrigin=req=>{const o=req.headers.get('origin');return !o||new URL(o).host===new URL(req.url).host};
  // ---- Brute-force guard: max 8 failed attempts per email+IP per 15 minutes (needs backend/store-schema-v7.sql; skipped quietly if the table is missing) ----
  const akey=(req,email)=>(req.headers.get('cf-connecting-ip')||'?')+'|'+email;
- const tooMany=async(env,k)=>{try{const x=await env.DB.prepare("SELECT COUNT(*) n FROM store_auth_attempts WHERE k=? AND created_at>datetime('now','-15 minutes')").bind(k).first();return x.n>=8}catch(e){return false}};
+ const tooMany=async(env,k,lim)=>{try{const x=await env.DB.prepare("SELECT COUNT(*) n FROM store_auth_attempts WHERE k=? AND created_at>datetime('now','-15 minutes')").bind(k).first();return x.n>=(lim||8)}catch(e){return false}};
  const failed=async(env,k)=>{try{await env.DB.prepare('INSERT INTO store_auth_attempts(k) VALUES(?)').bind(k).run();await env.DB.prepare("DELETE FROM store_auth_attempts WHERE created_at<datetime('now','-1 day')").run()}catch(e){}};
  const clearFails=async(env,k)=>{try{await env.DB.prepare('DELETE FROM store_auth_attempts WHERE k=?').bind(k).run()}catch(e){}};
  const okSession=async(env,row)=>{const ss=await createSession(env.DB,row.id);return new Response(JSON.stringify({ok:1,name:row.name,role:row.role}),{status:200,headers:{'content-type':'application/json','set-cookie':sessionCookie(ss.token,ss.expires,env.COOKIE_DOMAIN)}})};
@@ -78,13 +78,13 @@ export function registerStore(r){
   if(pw.length<8)return J({error:'Password must be at least 8 characters'},400);
   if(pw.length>200)return J({error:'Password is too long'},400);
   if(!/[A-Za-z]/.test(pw)||!/[0-9]/.test(pw))return J({error:'Password needs at least one letter and one number'},400);
-  const k=akey(request,'register');if(await tooMany(env,k))return J({error:'Too many attempts. Try again later.'},429);
+  const k=akey(request,'register');if(await tooMany(env,k,40))return J({error:'Too many attempts. Try again later.'},429);
   const ex=await env.DB.prepare('SELECT id FROM users WHERE lower(email)=?').bind(email).first();
   if(ex){await failed(env,k);return J({error:'An account with this email already exists. Sign in instead.'},409)}
   const {hash,salt}=await hashPassword(pw);
   let row;try{row=await env.DB.prepare("INSERT INTO users(name,email,password_hash,password_salt,role) VALUES(?,?,?,?,'user') RETURNING id,name,role").bind(name,email,hash,salt).first()}
   catch(e){if(/unique/i.test(String(e&&e.message)))return J({error:'An account with this email already exists. Sign in instead.'},409);throw e}
-  await failed(env,k);return okSession(env,row)});
+  return okSession(env,row)});
  // Public sign-in settings for the page (the Google client ID is public by design).
  r.get('/api/store/config',async({env})=>J({google_client_id:env.GOOGLE_CLIENT_ID||null}));
  // Sign in / sign up with Google. Existing accounts with the same verified email are signed in; otherwise a 'user' account is created.

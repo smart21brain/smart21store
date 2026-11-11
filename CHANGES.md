@@ -105,3 +105,13 @@ Deploy: copy the files over your project, deploy, then hard-refresh (the service
 - Edit: title, description, subject, level, licence, price, target app; replace the main file; upload, replace or remove the file for each device (Android, Windows, Mac, iOS, Linux).
 - Delete (asks twice): if nobody bought the item, the item and all its files (main, devices, icon, banner, trailer, screenshots, sample) are erased. If it has buyers, it is only removed from the store and kept, so their purchases and downloads keep working.
 - Both actions are written to the audit log. New API: GET /api/store/admin/items/:id, POST .../:id/edit, POST .../:id/delete (admin only). No database migration needed.
+
+
+## Fix: "D1 ERROR no such column: has_icon" + new uploads appear instantly
+- New `src/migrate.js`: on the first /api/ request the Worker adds any missing column/table from schema v2..v8 (has_icon, editors, has_banner, has_trailer, trailer_url, license ...). No manual migration needed any more.
+- Upload form: as soon as the main file is stored, the store list is reloaded so the item shows at once. Icon / banner / trailer / previews / sample failures no longer abort the upload; you get a warning instead.
+- Service worker cache bumped to s21store-v10 (hard-refresh once).
+
+## Fix: sign-up blocked by the attempt limiter
+- Successful sign-ups no longer count toward the limit (only "email already exists" does), and the sign-up limit per IP is now 40 per 15 minutes (phone networks share one IP between many people).
+- To clear an existing block right now: `npx wrangler d1 execute smart21store-db --remote --command "DELETE FROM store_auth_attempts"`

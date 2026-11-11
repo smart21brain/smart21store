@@ -2,6 +2,7 @@
 // handlers receive {request, env, url, params, ctx} and are registered with r.get / r.post.
 import { registerStore } from './store-api.js';
 import { handleSeo } from './seo.js';
+import { ensureSchema } from './migrate.js';
 
 function makeRouter() {
   const routes = [];
@@ -42,6 +43,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/')) {
       // API answers are data, not pages: keep them out of Google's index.
+      await ensureSchema(env); // adds any missing database column/table (has_icon, has_banner ...) once
       const r = await router.handle(request, env, ctx);
       const h = new Headers(r.headers);
       h.set('x-robots-tag', 'noindex');
