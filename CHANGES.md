@@ -99,3 +99,9 @@ Deploy: copy the files over your project, deploy, then hard-refresh (the service
 - Fixed: signed-in users (download manager) were never offered the device choice and always got the main file. They now get the picker too.
 - iOS: .ipa files cannot be installed straight from a website by iPhone users (Apple restriction); the file downloads, but installing needs TestFlight, enterprise signing or a Mac.
 - Device files are limited to 100 MB each (Cloudflare request limit). No new database migration for v9.
+
+## v10: Admin can edit and delete items
+- Studio (admin) and the store page (admin bar under the buttons) now have **Edit** and **Delete** for every item.
+- Edit: title, description, subject, level, licence, price, target app; replace the main file; upload, replace or remove the file for each device (Android, Windows, Mac, iOS, Linux).
+- Delete (asks twice): if nobody bought the item, the item and all its files (main, devices, icon, banner, trailer, screenshots, sample) are erased. If it has buyers, it is only removed from the store and kept, so their purchases and downloads keep working.
+- Both actions are written to the audit log. New API: GET /api/store/admin/items/:id, POST .../:id/edit, POST .../:id/delete (admin only). No database migration needed.
