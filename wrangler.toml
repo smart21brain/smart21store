@@ -27,6 +27,7 @@ SITE_URL = "https://smart21store.smart21brain.com"
 COOKIE_DOMAIN = ".smart21brain.com"
 # Google sign-in: OAuth Web client ID from Google Cloud Console (public value, not a secret)
 # GOOGLE_CLIENT_ID = "1234567890-abc.apps.googleusercontent.com"
+# AUTO_PUBLISH = "1"   # optional: seller uploads go live at once (admin uploads always do)
 # GOOGLE_SITE_VERIFICATION = "paste-token-from-search-console"
 
 [ai]

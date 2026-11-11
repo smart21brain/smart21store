@@ -120,7 +120,7 @@ async function itemPage(env, url, id) {
   return reply(html, 'text/html; charset=utf-8', 600);
 }
 
-// ---------- the store app itself, with SEO tags and a crawlable catalogue added ----------
+// ---------- the store app itself, with SEO tags added ----------
 async function home(request, env, url) {
   const b = siteBase(env, url);
   const m = url.searchParams.get('item');
@@ -134,7 +134,6 @@ async function home(request, env, url) {
     } catch (e) { canonUrl = b + '/'; }
   }
 
-  const items = await listItems(env, 60);
   const tags = '<link rel="canonical" href="' + esc(canonUrl) + '">'
     + (env.GOOGLE_SITE_VERIFICATION ? '<meta name="google-site-verification" content="' + esc(env.GOOGLE_SITE_VERIFICATION) + '">' : '')
     + '<meta property="og:type" content="website"><meta property="og:site_name" content="' + NAME + '"><meta property="og:title" content="' + esc(TITLE) + '">'
@@ -142,11 +141,6 @@ async function home(request, env, url) {
     + '<meta name="twitter:card" content="summary"><meta name="twitter:title" content="' + esc(TITLE) + '"><meta name="twitter:description" content="' + esc(DESC) + '">'
     + jsonLd({ '@context': 'https://schema.org', '@type': 'WebSite', name: NAME, url: b + '/', description: DESC, inLanguage: 'en' })
     + jsonLd({ '@context': 'https://schema.org', '@type': 'Organization', name: 'Smart21Brain', url: b + '/', logo: b + '/icons/store-512.png' });
-
-  const catalog = items.length
-    ? '<nav class="seo-cat" aria-label="Browse the catalogue"><style>.seo-cat{max-width:1100px;margin:0 auto;padding:18px 16px;text-align:left}.seo-cat h2{font-size:16px;margin:0 0 8px}.seo-cat ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 16px;font-size:14px}.seo-cat a{color:inherit;opacity:.85}</style><h2>Browse Smart21Store</h2><ul>'
-      + items.map(i => '<li><a href="' + esc(itemPath(i)) + '">' + esc(i.name) + '</a></li>').join('') + '</ul></nav>'
-    : '';
 
   // Fetch the static page from the assets binding (follow the redirect Workers Assets may add for ".html").
   const asset = p => new Request(new URL(p, url.origin), { method: 'GET', headers: request.headers });
@@ -156,7 +150,6 @@ async function home(request, env, url) {
 
   const out = new HTMLRewriter()
     .on('head', { element(e) { e.append(tags, { html: true }); } })
-    .on('footer', { element(e) { if (catalog) e.prepend(catalog, { html: true }); } })
     .transform(res);
   const h = new Headers(out.headers);
   h.set('content-type', 'text/html; charset=utf-8');
