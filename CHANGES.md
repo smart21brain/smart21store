@@ -92,3 +92,10 @@ Deploy: copy the files over your project, deploy, then hard-refresh (the service
 - Also fixed: the catalogue now loads on first open for visitors who are not signed in.
 - **Run once before deploying:** `npx wrangler d1 execute smart21store-db --remote --file=backend/store-schema-v8.sql`, then `npx wrangler deploy`.
 - New API: POST /api/store/admin/items/:id/banner, POST /api/store/admin/items/:id/trailer, GET /api/store/banner/:id, GET /api/store/trailer/:id.
+
+## v9: Downloads for every device (APK, Windows, Mac, iOS, Linux)
+- Publish console: new "Downloads for each device" section. Pick an APK, a Windows file, a Mac file, an iOS .ipa and/or a Linux file and they all upload together with the item. If the big main drop box is empty, the first device file is used as the main file (not uploaded twice).
+- Store page: "Available on" chips (Android, Windows PC, iOS...) under the title and in About. Download now always opens "Choose your download" listing only the devices that have a file, with file type and size, and marks the one matching the visitor's device.
+- Fixed: signed-in users (download manager) were never offered the device choice and always got the main file. They now get the picker too.
+- iOS: .ipa files cannot be installed straight from a website by iPhone users (Apple restriction); the file downloads, but installing needs TestFlight, enterprise signing or a Mac.
+- Device files are limited to 100 MB each (Cloudflare request limit). No new database migration for v9.
