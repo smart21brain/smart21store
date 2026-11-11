@@ -25,7 +25,8 @@ function makeRouter() {
         try {
           return await r.handler({ request, env, url, params, ctx });
         } catch (e) {
-          return new Response(JSON.stringify({ error: 'server error' }), { status: 500, headers: { 'content-type': 'application/json' } });
+          console.error('route error', url.pathname, e && e.message);
+          return new Response(JSON.stringify({ error: 'server error: ' + String((e && e.message) || e).slice(0, 200) }), { status: 500, headers: { 'content-type': 'application/json' } });
         }
       }
       return new Response(JSON.stringify({ error: 'not found' }), { status: 404, headers: { 'content-type': 'application/json' } });
